@@ -22,9 +22,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	// Constant rows and columns of the sprite sheet
 	private static final int FRAME_COLS = 6, FRAME_ROWS = 5;
 
-	int x = 1920;
-	int y = 1080;
-
 	int animationPosX = 960;
 	int animationPosY = 540;
 	float animationSpeed = 0.025f;
@@ -43,6 +40,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	Texture button;
 	Texture animationSheet;
 	Texture map;
+	Texture greenObject;
 
 	OrthographicCamera camera;
 
@@ -61,39 +59,32 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		System.out.println("CREATE 3");
 
-		//float w = Gdx.graphics.getWidth();
-		//float h = Gdx.graphics.getHeight();
+		float w = Gdx.graphics.getWidth();
+		float h = Gdx.graphics.getHeight();
 
-		camera = new OrthographicCamera(1920, 1080);
-		//camera.position.set(camera.viewportWidth / 2f, camera.viewportHeight / 2f, 0);
+		camera = new OrthographicCamera(w, h);
 		camera.update();
 
 
 		batch = new SpriteBatch();
 		button = new Texture(Gdx.files.internal("button.jpg"));
-		//cameraBatch = new SpriteBatch();
-		//cameraBatch.setProjectionMatrix();
 
 		System.out.println("CREATE 4");
 		map = new Texture(Gdx.files.internal("map.jpg"));
 
 		System.out.println("CREATE 5");
 
-
+		greenObject = new Texture(Gdx.files.internal("greenObject.jpg"));
 
 
 		animationSheet = new Texture(Gdx.files.internal("animation_sheet.png"));
 		//map = new Texture("map.png");
 
-		// Use the split utility method to create a 2D array of TextureRegions. This is
-		// possible because this sprite sheet contains frames of equal size and they are
-		// all aligned.
 		TextureRegion[][] tmp = TextureRegion.split(animationSheet,
 				animationSheet.getWidth() / FRAME_COLS,
 				animationSheet.getHeight() / FRAME_ROWS);
 
-		// Place the regions into a 1D array in the correct order, starting from the top
-		// left, going across first. The Animation constructor requires a 1D array.
+
 		TextureRegion[] walkFrames = new TextureRegion[FRAME_COLS * FRAME_ROWS];
 		int index = 0;
 		for (int i = 0; i < FRAME_ROWS; i++) {
@@ -105,10 +96,11 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		// Initialize the Animation with the frame interval and array of frames
 		animation = new Animation<TextureRegion>(animationSpeed, walkFrames);
 
-		// Instantiate a SpriteBatch for drawing and reset the elapsed animation
-		// time to 0
 		spriteBatch = new SpriteBatch();
 		stateTime = 0f;
+
+		//camera.position.set(camera.position.x - 150, camera.position.y - 100, 0); // ei vaikuta
+
 	}
 
 	@Override
@@ -117,24 +109,13 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		//System.out.println("RENDER");
 
 		batch.setProjectionMatrix(camera.combined);
-		//camera.position.set(((float) animationPosX), (float) animationPosY,0);
 		camera.update();
 
 		//System.out.println(animationPosX);
 
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-
-		batch.begin();
-		batch.draw(button, 200, 200);
-		batch.draw(map, 960, 540);
-		//batch.draw(button, camera.position.x, camera.position.y);
-		batch.end();
-
-		TextureRegion currentFrame = animation.getKeyFrame(stateTime, true);
-		spriteBatch.begin();
-		spriteBatch.draw(currentFrame, animationPosX, animationPosY);
-		spriteBatch.end();
+		drawObjects();
 
 		if (animationRunning) {
 			stateTime += Gdx.graphics.getDeltaTime(); // Accumulate elapsed animation time
@@ -147,10 +128,25 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			stateTime = 0.025f;
 		}
 
-		System.out.println(animationPosX);
+	}
 
+	public void drawObjects() {
+		batch.begin();
+		//batch.draw(button, 500, 500);
+		batch.draw(map, 0, 0);
 
+		for (int i = 0; i <= 5; i++) {
+			batch.draw(greenObject, -300 + i * 200, -300);
+			batch.draw(greenObject, -300, -300 + i * 200);
+		}
 
+		//batch.draw(button, camera.position.x, camera.position.y); //debug kameran paikka
+		batch.end();
+
+		TextureRegion currentFrame = animation.getKeyFrame(stateTime, true);
+		spriteBatch.begin();
+		spriteBatch.draw(currentFrame, animationPosX - 50, animationPosY - 40);
+		spriteBatch.end();
 	}
 
 	@Override
