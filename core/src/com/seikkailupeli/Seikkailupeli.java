@@ -22,25 +22,33 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	// Constant rows and columns of the sprite sheet
 	private static final int FRAME_COLS = 6, FRAME_ROWS = 5;
 
-	int animationPosX = 960;
-	int animationPosY = 540;
+
+	int playerPosX;
+	int playerPosY;
+
 	float animationSpeed = 0.025f;
 	float stateTime;
 	float animationTime;
 
 	boolean animationRunning = false;
+	boolean drawObjectEnabled = true;
+	boolean uiButtonsEnabled = true;
+	boolean movementEnabled = true;
+
 
 	// Objects used
 	Animation<TextureRegion> animation; // Must declare frame type (TextureRegion)
 	SpriteBatch spriteBatch;
 	SpriteBatch batch;
-	SpriteBatch cameraBatch;
-	//SpriteBatch mapbatch;
+	//SpriteBatch cameraBatch;
 
 	Texture button;
 	Texture animationSheet;
 	Texture map;
 	Texture greenObject;
+
+	TiledMap tiledMap;
+	TiledMapRenderer tiledMapRenderer;
 
 	OrthographicCamera camera;
 
@@ -52,15 +60,21 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		System.out.println("CREATE");
 
-		System.out.println("CREATE 2");
+		int w = Gdx.graphics.getWidth();
+		int h = Gdx.graphics.getHeight();
+
+
+		playerPosX = w / 2;
+		playerPosY = h / 2;
 
 		//tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
+		tiledMap = new TmxMapLoader().load("testmap.tmx");
 
+		System.out.println("CREATE 2");
+
+		tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
 
 		System.out.println("CREATE 3");
-
-		float w = Gdx.graphics.getWidth();
-		float h = Gdx.graphics.getHeight();
 
 		camera = new OrthographicCamera(w, h);
 		camera.update();
@@ -99,8 +113,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		spriteBatch = new SpriteBatch();
 		stateTime = 0f;
 
-		//camera.position.set(camera.position.x - 150, camera.position.y - 100, 0); // ei vaikuta
-
 	}
 
 	@Override
@@ -111,11 +123,18 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		batch.setProjectionMatrix(camera.combined);
 		camera.update();
 
-		//System.out.println(animationPosX);
+		//System.out.println(playerPosX);
 
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-		drawObjects();
+
+		if (drawObjectEnabled) {
+			drawObjects();
+		}
+
+		if (uiButtonsEnabled) {
+			drawButtons();
+		}
 
 		if (animationRunning) {
 			stateTime += Gdx.graphics.getDeltaTime(); // Accumulate elapsed animation time
@@ -133,7 +152,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	public void drawObjects() {
 		batch.begin();
 		//batch.draw(button, 500, 500);
-		batch.draw(map, 0, 0);
+		//batch.draw(map, 0, 0);
 
 		for (int i = 0; i <= 5; i++) {
 			batch.draw(greenObject, -300 + i * 200, -300);
@@ -143,10 +162,35 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		//batch.draw(button, camera.position.x, camera.position.y); //debug kameran paikka
 		batch.end();
 
+		tiledMapRenderer.setView(camera);
+		tiledMapRenderer.render();
+
+
 		TextureRegion currentFrame = animation.getKeyFrame(stateTime, true);
 		spriteBatch.begin();
-		spriteBatch.draw(currentFrame, animationPosX - 50, animationPosY - 40);
+		spriteBatch.draw(currentFrame, playerPosX - 50, playerPosY - 40);
 		spriteBatch.end();
+	}
+
+	public void drawButtons() {
+		batch.begin();
+
+		float cX = camera.position.x;
+		float cY = camera.position.y;
+
+		//left
+		batch.draw(button, cX - 900, cY - 350);
+
+		//right
+		batch.draw(button, cX - 600, cY - 350);
+
+		//up
+		batch.draw(button, cX - 750, cY - 200);
+
+		//down
+		batch.draw(button, cX - 750, cY - 500);
+
+		batch.end();
 	}
 
 	@Override
@@ -154,29 +198,31 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		batch.dispose();
 		button.dispose();
 		spriteBatch.dispose();
+		greenObject.dispose();
+		animationSheet.dispose();
 	}
 
 	public void moveLeft(int pixels) {
-		//animationPosX -= pixels;
+		//playerPosX -= pixels;
 		camera.translate(-pixels, 0, 0);
 		System.out.println("MOVE LEFT");
 	}
 
 	public void moveRight(int pixels) {
-		//animationPosX += pixels;
+		//playerPosX += pixels;
 		camera.translate(+pixels, 0, 0);
 
 		System.out.println("MOVE RIGHT");
 	}
 
 	public void moveUp(int pixels) {
-		//animationPosY += pixels;
+		//playerPosY += pixels;
 		camera.translate(0, +pixels);
 		System.out.println("MOVE UP");
 	}
 
 	public void moveDown(int pixels) {
-		//animationPosY -= pixels;
+		//playerPosY -= pixels;
 		camera.translate(0, -pixels);
 		System.out.println("MOVE DOWN");
 	}
@@ -194,28 +240,55 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		System.out.println("TOUCHDOWN! " + "X: "+ String.valueOf(screenX) + "  Y:  " + String.valueOf(screenY));
+		System.out.println("TOUCHDOWN! " + "X: " + String.valueOf(screenX) + "  Y:  " + String.valueOf(screenY));
 
-		if (screenX < 300) {
-			moveLeft(32);
-			playAnimation();
+		int moveAmount = 50;
+
+		if (movementEnabled && uiButtonsEnabled) {
+			if (screenX > 30 && screenX < 220 && screenY > 700 && screenY < 900) {
+				moveLeft(moveAmount);
+				playAnimation();
+			}
+
+			if (screenX > 340 && screenX < 500 && screenY > 700 && screenY < 900) {
+				moveRight(moveAmount);
+				playAnimation();
+			}
+
+			if (screenX > 200 && screenX < 360 && screenY > 600 && screenY < 740) {
+				moveUp(moveAmount);
+				playAnimation();
+			}
+
+			if (screenX > 200 && screenX < 360 && screenY > 900 && screenY < 1064) {
+				moveDown(moveAmount);
+				playAnimation();
+			}
 		}
 
-		if (screenX > 1600) {
-			moveRight(32);
-			playAnimation();
-		}
 
-		if (screenY < 200) {
-			moveUp(32);
-			playAnimation();
-		}
+		if (movementEnabled && !uiButtonsEnabled) {
 
-		if (screenY > 900) {
-			moveDown(32);
-			playAnimation();
-		}
+			if (screenX < 300) {
+				moveLeft(moveAmount);
+				playAnimation();
+			}
 
+			if (screenX > 1600) {
+				moveRight(moveAmount);
+				playAnimation();
+			}
+
+			if (screenY < 200) {
+				moveUp(moveAmount);
+				playAnimation();
+			}
+
+			if (screenY > 900) {
+				moveDown(moveAmount);
+				playAnimation();
+			}
+		}
 
 		return false;
 	}
