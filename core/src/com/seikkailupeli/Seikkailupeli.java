@@ -14,6 +14,7 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapRenderer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,43 +25,45 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	// Constant rows and columns of the player sprite sheet
 	private static final int FRAME_COLS = 6, FRAME_ROWS = 5;
 
-	int playerPosX;
-	int playerPosY;
+	private int playerSpawnPosX = 768;
+	private int playerSpawnPosY = 512;
 
-	float playerAnimationSpeed = 0.025f;
-	float playerAnimationStateTime;
-	float playerAnimatonTime;
+	private int playerPosX;
+	private int playerPosY;
 
-	boolean playerAnimatonRunning = false;
+	private float playerAnimationSpeed = 0.025f;
+	private float playerAnimationStateTime;
+	private float playerAnimationTime;
 
-	boolean drawObjectEnabled = true;
-	boolean tilemapEnabled = true;
-	boolean uiButtonsEnabled = true;
-	boolean movementEnabled = true;
-	boolean actionPointsEnabled = true;
+	private boolean playerAnimationRunning = false;
 
-	List<Integer> actionCoordinatesX = new ArrayList<Integer>();
-	List<Integer> actionCoordinatesY = new ArrayList<Integer>();
+	private boolean drawObjectEnabled = true;
+	private boolean tilemapEnabled = true;
+	private boolean uiButtonsEnabled = true;
+	private boolean movementEnabled = true;
+	private boolean actionPointsEnabled = true;
 
-	// Objects used
-	Animation<TextureRegion> animation; // Must declare frame type (TextureRegion)
-	SpriteBatch spriteBatch;
-	SpriteBatch batch;
+	private List<Integer> actionCoordinatesX = new ArrayList<Integer>();
+	private List<Integer> actionCoordinatesY = new ArrayList<Integer>();
+	private List<Integer> actionType = new ArrayList<Integer>();
 
-	BitmapFont font;
-	Toast toast;
+	private Animation<TextureRegion> animation; // Must declare frame type (TextureRegion)
+	private SpriteBatch spriteBatch;
+	private SpriteBatch batch;
 
-	Texture button;
-	Texture actionButton;
-	Texture animationSheet;
-	Texture map;
-	Texture greenObject;
-	Texture actionObject;
+	private BitmapFont font;
+	private Toast toast;
 
-	TiledMap tiledMap;
-	TiledMapRenderer tiledMapRenderer;
+	private Texture button;
+	private Texture actionButton;
+	private Texture animationSheet;
+	private Texture greenObject;
+	private Texture actionObject;
 
-	OrthographicCamera camera;
+	private TiledMap tiledMap;
+	private TiledMapRenderer tiledMapRenderer;
+
+	private OrthographicCamera camera;
 
 
 	@Override
@@ -73,24 +76,19 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		int w = Gdx.graphics.getWidth();
 		int h = Gdx.graphics.getHeight();
 
-		playerPosX = w / 2 + 50;
-		playerPosY = h / 2 + 40;
-
-		font = new BitmapFont();
-		Toast.ToastFactory toastFactory = new Toast.ToastFactory.Builder().font(font).build();
-
-		toast = toastFactory.create("TOAST TEST!!", Toast.Length.LONG);
-
-		//tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
-		tiledMap = new TmxMapLoader().load("testmap.tmx");
+		playerPosX = w / 2 + 30;
+		playerPosY = h / 2 - 30;
 
 		System.out.println("CREATE 2");
+
+		tiledMap = new TmxMapLoader().load("map1.tmx");
 
 		tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap, 4);
 
 		System.out.println("CREATE 3");
 
 		camera = new OrthographicCamera(w, h);
+		camera.position.set(playerSpawnPosX, playerSpawnPosY, 0);
 		camera.update();
 
 		batch = new SpriteBatch();
@@ -99,15 +97,12 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		actionButton = new Texture(Gdx.files.internal("actionButton.jpg"));
 
 		System.out.println("CREATE 4");
-		map = new Texture(Gdx.files.internal("map.jpg"));
-
 		System.out.println("CREATE 5");
 
 		greenObject = new Texture(Gdx.files.internal("greenObject.jpg"));
 		actionObject = new Texture(Gdx.files.internal("actionObject.jpg"));
 
 		animationSheet = new Texture(Gdx.files.internal("animation_sheet.png"));
-		//map = new Texture("map.png");
 
 		TextureRegion[][] tmp = TextureRegion.split(animationSheet,
 				animationSheet.getWidth() / FRAME_COLS,
@@ -129,18 +124,20 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		playerAnimationStateTime = 0f;
 
 		defineActionCoordinates();
-
 	}
 
-	public void defineActionCoordinates() { //maaritellaan action paikkojen koordinaatit
-		actionCoordinatesX.add(-256);
-		actionCoordinatesY.add(256);
-
-		actionCoordinatesX.add(-512);
-		actionCoordinatesY.add(-512);
-
+	private void defineActionCoordinates() { //maaritellaan action paikkojen koordinaatit
 		actionCoordinatesX.add(1000);
 		actionCoordinatesY.add(1000);
+		actionType.add(1);
+
+		actionCoordinatesX.add(1200);
+		actionCoordinatesY.add(1700);
+		actionType.add(2);
+
+		actionCoordinatesX.add(2200);
+		actionCoordinatesY.add(500);
+		actionType.add(2);
 
 		if (actionCoordinatesX.size() != actionCoordinatesY.size()) {
 			System.out.println("CHECK COORDINATES!");
@@ -158,9 +155,9 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		//System.out.println(playerPosX);
 
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		Gdx.gl.glClearColor(0.398f, 1, 1, 0);
+		Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT );
 
-		toast.render(Gdx.graphics.getDeltaTime());
 
 
 		if (drawObjectEnabled) {
@@ -171,20 +168,25 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			drawButtons();
 		}
 
-		if (playerAnimatonRunning) {
+		if (toast != null)
+		{
+			toast.render(Gdx.graphics.getDeltaTime());
+		}
+
+		if (playerAnimationRunning) {
 			playerAnimationStateTime += Gdx.graphics.getDeltaTime(); // Accumulate elapsed animation time
 		}
 
-		playerAnimatonTime += Gdx.graphics.getDeltaTime();
+		playerAnimationTime += Gdx.graphics.getDeltaTime();
 
-		if (playerAnimatonTime > 0.8f) {
-			playerAnimatonRunning = false;
+		if (playerAnimationTime > 0.8f) {
+			playerAnimationRunning = false;
 			playerAnimationStateTime = 0.025f;
 		}
 
 	}
 
-	public void drawTextures() {
+	private void drawTextures() {
 		if (tilemapEnabled) {
 			tiledMapRenderer.setView(camera);
 			tiledMapRenderer.render();
@@ -216,7 +218,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	}
 
 
-	public void drawButtons() {
+	private void drawButtons() {
 		batch.begin();
 
 		float cX = camera.position.x;
@@ -254,40 +256,40 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		tiledMap.dispose();
 	}
 
-	public void moveLeft(int pixels) {
+	private void moveLeft(int pixels) {
 		//playerPosX -= pixels;
 		camera.translate(-pixels, 0, 0);
 		System.out.println("MOVE LEFT");
 	}
 
-	public void moveRight(int pixels) {
+	private void moveRight(int pixels) {
 		//playerPosX += pixels;
 		camera.translate(+pixels, 0, 0);
 		System.out.println("MOVE RIGHT");
 	}
 
-	public void moveUp(int pixels) {
+	private void moveUp(int pixels) {
 		//playerPosY += pixels;
 		camera.translate(0, +pixels);
 		System.out.println("MOVE UP");
 	}
 
-	public void moveDown(int pixels) {
+	private void moveDown(int pixels) {
 		//playerPosY -= pixels;
 		camera.translate(0, -pixels);
 		System.out.println("MOVE DOWN");
 	}
 
-	public void playPlayerAnimation() {
+	private void playPlayerAnimation() {
 
-		if (!playerAnimatonRunning) {
+		if (!playerAnimationRunning) {
 		}
 
-		playerAnimatonRunning = true;
-		playerAnimatonTime = 0;
+		playerAnimationRunning = true;
+		playerAnimationTime = 0;
 	}
 
-	public void checkAction() 		//tarkista onko action pisteita lahella kun action buttonia painetaan
+	private void checkAction() 		//tarkista onko action pisteita lahella kun action buttonia painetaan
 	{
 		System.out.println("CHECK ACTION! x = " + Float.toString(camera.position.x) +"  y = "+ Float.toString(camera.position.y));
 
@@ -297,9 +299,31 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		if (camera.position.x - actionCoordinatesX.get(i) <= distanceToObject && camera.position.x - actionCoordinatesX.get(i) >= -distanceToObject
 				&& camera.position.y - actionCoordinatesY.get(i) <= distanceToObject && camera.position.y - actionCoordinatesY.get(i) >= -distanceToObject)
 		{
-			System.out.println("NEAR POINT:  " + Integer.toString(i+1));
+			int action = actionType.get(i);
+			System.out.println("NEAR POINT:  " + Integer.toString(i+1) + "  Action type is: " + Integer.toString(action));
+			doAction(i, action);
 		}
 	}
+	}
+
+	private void doAction(int actionIndex, int action) {
+		switch (action) {
+			case 1:
+				showToast("ACTION POINT NUMBER: " + Integer.toString(actionIndex+1) + " TYPE: " + Integer.toString(action));
+				break;
+
+			case 2:
+				showToast("ACTION POINT NUMBER: " + Integer.toString(actionIndex+1) + " TYPE: " + Integer.toString(action));
+				break;
+		}
+	}
+
+
+	private void showToast(String text) {
+		font = new BitmapFont();
+		font.getData().setScale(3);
+		Toast.ToastFactory toastFactory = new Toast.ToastFactory.Builder().font(font).build();
+		toast = toastFactory.create(text, Toast.Length.SHORT);
 	}
 
 	@Override
