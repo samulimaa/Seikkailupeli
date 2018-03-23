@@ -9,7 +9,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Object extends Seikkailupeli {
 
-    protected String objectName;
+    public Texture itemTexture;
+    public String itemName;
+
     protected int objectCoordinateX;
     protected int objectCoordinateY;
 
@@ -20,9 +22,8 @@ public class Object extends Seikkailupeli {
 
 class PickableItem extends Object {
 
-    private Texture itemTexture;
-    private String itemName;
-
+    public Texture itemTexture;
+    public String itemName;
 
     public PickableItem(String name, Texture texture, int itemCoordinateX, int itemCoordinateY) {
 
@@ -47,6 +48,5 @@ class PickableItem extends Object {
     public int getItemCoordinateY() {
         return objectCoordinateY;
     }
-
 
 }

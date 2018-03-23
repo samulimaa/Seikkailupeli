@@ -18,7 +18,6 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 
@@ -41,6 +40,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private boolean tilemapEnabled = true;
 	private boolean uiButtonsEnabled = true;
 	private boolean movementEnabled = true;
+	private boolean drawInventory = false;
 
 	private Animation<TextureRegion> animation; // Must declare frame type (TextureRegion)
 	private SpriteBatch spriteBatch;
@@ -53,7 +53,9 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private Texture actionButton;
 	private Texture animationSheet;
 	private Texture greenObject;
-	private Texture actionObject;
+	private Texture item1;
+	private Texture item2;
+	private Texture inventoryBackground;
 
 	private TiledMap tiledMap;
 	private TiledMapRenderer tiledMapRenderer;
@@ -63,7 +65,8 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	public PickableItem pickableItem;
 
 	private List<PickableItem> pickableItemList = new ArrayList<PickableItem>();
-	private List<String> inventoryList = new ArrayList<String>();
+
+	private List<Inventory> inventory = new ArrayList<Inventory>();
 
 	@Override
 	public void create () {
@@ -78,7 +81,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		playerPosX = w / 2 + 30;
 		playerPosY = h / 2 - 30;
 
-		System.out.println("CREATE 2");
 
 		tiledMap = new TmxMapLoader().load("map1.tmx");
 
@@ -98,7 +100,11 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		System.out.println("CREATE 4");
 
 		greenObject = new Texture(Gdx.files.internal("greenObject.jpg"));
-		actionObject = new Texture(Gdx.files.internal("actionObject.jpg"));
+
+		item1 = new Texture(Gdx.files.internal("item1.jpg"));
+		item2 = new Texture(Gdx.files.internal("item2.jpg"));
+
+		inventoryBackground = new Texture(Gdx.files.internal("inventory.jpg"));
 
 		animationSheet = new Texture(Gdx.files.internal("animation_sheet.png"));
 
@@ -121,7 +127,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		spriteBatch = new SpriteBatch();
 		playerAnimationStateTime = 0f;
 
-
 		System.out.println("CREATE 5");
 
 		placeItems();
@@ -129,14 +134,16 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 	private void placeItems() { //maaritellaan poimittavat tavarat yms
 
-		pickableItemList.add (new PickableItem("tavara1", actionObject,128, 128));
-		pickableItemList.add (new PickableItem("tavara2", actionObject,512, 128));
-		pickableItemList.add (new PickableItem("tavara3", actionObject,1024, 1024));
-		pickableItemList.add (new PickableItem("tavara4", actionObject,2048, 1024));
-		pickableItemList.add (new PickableItem("tavara5", actionObject, 1536, 1536));
-		pickableItemList.add (new PickableItem("tavara6", actionObject,4096, 768));
+		pickableItemList.add (new PickableItem("tavara1", item1,128, 128));
+		pickableItemList.add (new PickableItem("tavara2", item1,512, 128));
+		pickableItemList.add (new PickableItem("tavara3", item1,1024, 1024));
+		pickableItemList.add (new PickableItem("tavara4", item1,2048, 1024));
+		pickableItemList.add (new PickableItem("tavara5", item1, 1536, 1536));
+		pickableItemList.add (new PickableItem("tavara6", item1,4096, 768));
 
-		//pickableItem = new PickableItem("tavara3", actionObject, 256, 256);
+		pickableItemList.add(new PickableItem("avain1", item2, 800, 1792));
+		pickableItemList.add(new PickableItem("avain2", item2, 2048, 1792));
+		pickableItemList.add(new PickableItem("avain3", item2, 1536, 128));
 	}
 
 	@Override
@@ -152,14 +159,16 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		Gdx.gl.glClearColor(0.398f, 1, 1, 0);
 		Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT );
 
-
-
 		if (drawObjectEnabled) {
 			drawTextures();
 		}
 
 		if (uiButtonsEnabled) {
 			drawButtons();
+		}
+
+		if (drawInventory) {
+			drawInventory();
 		}
 
 		if (toast != null)
@@ -199,7 +208,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		/*if (actionPointsEnabled) {
 			for (int i = 0; i < actionCoordinatesX.size(); i++) {
-				batch.draw(actionObject, actionCoordinatesX.get(i), actionCoordinatesY.get(i));
+				batch.draw(item1, actionCoordinatesX.get(i), actionCoordinatesY.get(i));
 			}
 		}*/
 
@@ -207,10 +216,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			batch.draw(pickableItemList.get(i).getItemTexture(), pickableItemList.get(i).getItemCoordinateX(), pickableItemList.get(i).getItemCoordinateY());
 		}
 
-
 		//batch.draw(pickableItem.getItemTexture(), pickableItem.getItemCoordinateX(), pickableItem.getItemCoordinateY());
-
-
 
 		batch.end();
 
@@ -244,6 +250,30 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		//action button
 		batch.draw(actionButton, cX + 750, cY - 500);
 
+		batch.end();
+	}
+
+	private void drawInventory() {
+
+		batch.begin();
+
+		System.out.println("DRAW INVENTORY()");
+
+		float inventoryCoordinateX = camera.position.x - 550;
+		float inventoryCoordinateY = camera.position.y - 200;
+
+		batch.draw(inventoryBackground, inventoryCoordinateX, inventoryCoordinateY);
+
+		for (int i = 0; i < inventory.size(); i++) {
+			System.out.println(inventory.size());
+			//batch.draw(greenObject, inventoryCoordinateX, inventoryCoordinateY);
+			if (Inventory.getObjectsDrawn() > Inventory.getItemsPerRow()) {
+				Inventory.goNextRow();
+				Inventory.setObjectsDrawn(0);
+			}
+			batch.draw(inventory.get(i).getTexture(), inventoryCoordinateX + 50 + Inventory.getDistanceBetweenObjectsX() * i,
+					inventoryCoordinateY + inventoryBackground.getHeight() - Inventory.getDistanceBetweenObjectsY());
+		}
 
 		batch.end();
 	}
@@ -296,7 +326,9 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	{
 		System.out.println("CHECK ACTION! x = " + Float.toString(camera.position.x) +"  y = "+ Float.toString(camera.position.y));
 
-		int distanceToObject = 128;
+		int distanceToObject = 100;
+
+		showInventory();
 
 		for (int i = 0; i < pickableItemList.size(); i++) {
 			if (camera.position.x - pickableItemList.get(i).getItemCoordinateX() <= distanceToObject && camera.position.x - pickableItemList.get(i).getItemCoordinateX() >= -distanceToObject
@@ -311,15 +343,21 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private void pickUpItem(int i) {
 		System.out.println("PICKUP " + Integer.toString(i));
 		showToast("PICKED UP: " + pickableItemList.get(i).getItemName());
-		inventoryList.add(pickableItemList.get(i).getItemName());
+		inventory.add(new Inventory(pickableItemList.get(i).getItemName(), pickableItemList.get(i).getItemTexture()));
 		pickableItemList.remove(i);
 	}
 
 	private void showInventory() {
-		for (int i = 0; i < inventoryList.size(); i++)
+
+		List<String> items = new ArrayList<String>();
+		for (int i = 0; i < inventory.size(); i++)
 		{
-			showToast("YOU HAVE: " + inventoryList.get(i) + " , ");
-			System.out.println(inventoryList.get(i));
+			items.add(inventory.get(i).getItemName());
+		}
+
+		for (int i = 0; i < items.size(); i++) {
+			System.out.println(items.get(i));
+
 		}
 
 	}
@@ -338,7 +376,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		int moveAmount = 128;
 
-		if (movementEnabled && uiButtonsEnabled) {
+		if (movementEnabled && uiButtonsEnabled) { //liikkuminen
 			if (screenX > 30 && screenX < 220 && screenY > 700 && screenY < 900) {
 				moveLeft(moveAmount);
 				playPlayerAnimation();
@@ -360,9 +398,21 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			}
 		}
 
-		if (uiButtonsEnabled) {
+		if (uiButtonsEnabled) { //toimintanappi
 			if (screenX > 1670 && screenX < 1910 && screenY > 850 && screenY < 1050) {
 				checkAction();
+			}
+		}
+
+		if (uiButtonsEnabled && !drawInventory) { //inventory on
+			if (screenY < 200) {
+				drawInventory = true;
+			}
+		}
+
+		if(uiButtonsEnabled && drawInventory){ //inventory off
+			if (screenY > 600) {
+				drawInventory = false;
 			}
 		}
 
