@@ -41,11 +41,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private boolean tilemapEnabled = true;
 	private boolean uiButtonsEnabled = true;
 	private boolean movementEnabled = true;
-	private boolean actionPointsEnabled = true;
-
-	private List<Integer> actionCoordinatesX = new ArrayList<Integer>();
-	private List<Integer> actionCoordinatesY = new ArrayList<Integer>();
-	private List<Integer> actionType = new ArrayList<Integer>();
 
 	private Animation<TextureRegion> animation; // Must declare frame type (TextureRegion)
 	private SpriteBatch spriteBatch;
@@ -65,6 +60,10 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 	private OrthographicCamera camera;
 
+	public PickableItem pickableItem;
+
+	private List<PickableItem> pickableItemList = new ArrayList<PickableItem>();
+	private List<String> inventoryList = new ArrayList<String>();
 
 	@Override
 	public void create () {
@@ -97,7 +96,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		actionButton = new Texture(Gdx.files.internal("actionButton.jpg"));
 
 		System.out.println("CREATE 4");
-		System.out.println("CREATE 5");
 
 		greenObject = new Texture(Gdx.files.internal("greenObject.jpg"));
 		actionObject = new Texture(Gdx.files.internal("actionObject.jpg"));
@@ -123,26 +121,22 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		spriteBatch = new SpriteBatch();
 		playerAnimationStateTime = 0f;
 
-		defineActionCoordinates();
+
+		System.out.println("CREATE 5");
+
+		placeItems();
 	}
 
-	private void defineActionCoordinates() { //maaritellaan action paikkojen koordinaatit
-		actionCoordinatesX.add(1000);
-		actionCoordinatesY.add(1000);
-		actionType.add(1);
+	private void placeItems() { //maaritellaan poimittavat tavarat yms
 
-		actionCoordinatesX.add(1200);
-		actionCoordinatesY.add(1700);
-		actionType.add(2);
+		pickableItemList.add (new PickableItem("tavara1", actionObject,128, 128));
+		pickableItemList.add (new PickableItem("tavara2", actionObject,512, 128));
+		pickableItemList.add (new PickableItem("tavara3", actionObject,1024, 1024));
+		pickableItemList.add (new PickableItem("tavara4", actionObject,2048, 1024));
+		pickableItemList.add (new PickableItem("tavara5", actionObject, 1536, 1536));
+		pickableItemList.add (new PickableItem("tavara6", actionObject,4096, 768));
 
-		actionCoordinatesX.add(2200);
-		actionCoordinatesY.add(500);
-		actionType.add(2);
-
-		if (actionCoordinatesX.size() != actionCoordinatesY.size()) {
-			System.out.println("CHECK COORDINATES!");
-		}
-
+		//pickableItem = new PickableItem("tavara3", actionObject, 256, 256);
 	}
 
 	@Override
@@ -203,11 +197,20 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		//batch.draw(button, camera.position.x, camera.position.y); //debug kameran paikka
 
-		if (actionPointsEnabled) {
+		/*if (actionPointsEnabled) {
 			for (int i = 0; i < actionCoordinatesX.size(); i++) {
 				batch.draw(actionObject, actionCoordinatesX.get(i), actionCoordinatesY.get(i));
 			}
+		}*/
+
+		for (int i = 0; i < pickableItemList.size(); i++) {
+			batch.draw(pickableItemList.get(i).getItemTexture(), pickableItemList.get(i).getItemCoordinateX(), pickableItemList.get(i).getItemCoordinateY());
 		}
+
+
+		//batch.draw(pickableItem.getItemTexture(), pickableItem.getItemCoordinateX(), pickableItem.getItemCoordinateY());
+
+
 
 		batch.end();
 
@@ -289,33 +292,36 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		playerAnimationTime = 0;
 	}
 
-	private void checkAction() 		//tarkista onko action pisteita lahella kun action buttonia painetaan
+	private void checkAction() 		//tarkista onko pelaajan lahella toimintoja
 	{
 		System.out.println("CHECK ACTION! x = " + Float.toString(camera.position.x) +"  y = "+ Float.toString(camera.position.y));
 
 		int distanceToObject = 128;
 
-		for (int i = 0; i < actionCoordinatesX.size(); i++) {
-		if (camera.position.x - actionCoordinatesX.get(i) <= distanceToObject && camera.position.x - actionCoordinatesX.get(i) >= -distanceToObject
-				&& camera.position.y - actionCoordinatesY.get(i) <= distanceToObject && camera.position.y - actionCoordinatesY.get(i) >= -distanceToObject)
+		for (int i = 0; i < pickableItemList.size(); i++) {
+			if (camera.position.x - pickableItemList.get(i).getItemCoordinateX() <= distanceToObject && camera.position.x - pickableItemList.get(i).getItemCoordinateX() >= -distanceToObject
+					&& camera.position.y - pickableItemList.get(i).getItemCoordinateY() <= distanceToObject && camera.position.y - pickableItemList.get(i).getItemCoordinateY() >= -distanceToObject)
+			{
+				System.out.println("NEAR POINT:  " + Integer.toString(i));
+				pickUpItem(i);
+			}
+		}
+	}
+
+	private void pickUpItem(int i) {
+		System.out.println("PICKUP " + Integer.toString(i));
+		showToast("PICKED UP: " + pickableItemList.get(i).getItemName());
+		inventoryList.add(pickableItemList.get(i).getItemName());
+		pickableItemList.remove(i);
+	}
+
+	private void showInventory() {
+		for (int i = 0; i < inventoryList.size(); i++)
 		{
-			int action = actionType.get(i);
-			System.out.println("NEAR POINT:  " + Integer.toString(i+1) + "  Action type is: " + Integer.toString(action));
-			doAction(i, action);
+			showToast("YOU HAVE: " + inventoryList.get(i) + " , ");
+			System.out.println(inventoryList.get(i));
 		}
-	}
-	}
 
-	private void doAction(int actionIndex, int action) {
-		switch (action) {
-			case 1:
-				showToast("ACTION POINT NUMBER: " + Integer.toString(actionIndex+1) + " TYPE: " + Integer.toString(action));
-				break;
-
-			case 2:
-				showToast("ACTION POINT NUMBER: " + Integer.toString(actionIndex+1) + " TYPE: " + Integer.toString(action));
-				break;
-		}
 	}
 
 
@@ -354,7 +360,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			}
 		}
 
-		if (uiButtonsEnabled && actionPointsEnabled) {
+		if (uiButtonsEnabled) {
 			if (screenX > 1670 && screenX < 1910 && screenY > 850 && screenY < 1050) {
 				checkAction();
 			}
