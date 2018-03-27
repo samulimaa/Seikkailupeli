@@ -20,19 +20,22 @@ import java.util.List;
 
 public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
-
 	// Constant rows and columns of the player sprite sheet
 	private static final int FRAME_COLS = 6, FRAME_ROWS = 5;
 
 	private int playerSpawnPosX = 768;
 	private int playerSpawnPosY = 512;
-
 	private int playerPosX;
 	private int playerPosY;
+	private int currentLevel = 1;
+	private int randomMaxItems;
+	private int randomItemsOnMap = 0;
 
 	private float playerAnimationSpeed = 0.025f;
 	private float playerAnimationStateTime;
 	private float playerAnimationTime;
+	private float randomSpawnTime;
+	private float randomSpawnInterval;
 
 	private boolean playerAnimationRunning = false;
 
@@ -40,7 +43,9 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private boolean tilemapEnabled = true;
 	private boolean uiButtonsEnabled = true;
 	private boolean movementEnabled = true;
+	private boolean drawPickableItems = true;
 	private boolean drawInventory = false;
+	private boolean enableRandomSpawns;
 
 	private Animation<TextureRegion> animation; // Must declare frame type (TextureRegion)
 	private SpriteBatch spriteBatch;
@@ -55,6 +60,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private Texture greenObject;
 	private Texture item1;
 	private Texture item2;
+	private Texture randomItem1;
 	private Texture inventoryBackground;
 
 	private TiledMap tiledMap;
@@ -62,10 +68,8 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 	private OrthographicCamera camera;
 
-	public PickableItem pickableItem;
-
 	private List<PickableItem> pickableItemList = new ArrayList<PickableItem>();
-
+	//private List<RandomSpawnPickableItem> randomSpawnPickableItemList = new ArrayList<RandomSpawnPickableItem>();
 	private List<Inventory> inventory = new ArrayList<Inventory>();
 
 	@Override
@@ -80,7 +84,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		playerPosX = w / 2 + 30;
 		playerPosY = h / 2 - 30;
-
 
 		tiledMap = new TmxMapLoader().load("map1.tmx");
 
@@ -100,9 +103,9 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		System.out.println("CREATE 4");
 
 		greenObject = new Texture(Gdx.files.internal("greenObject.jpg"));
-
 		item1 = new Texture(Gdx.files.internal("item1.jpg"));
 		item2 = new Texture(Gdx.files.internal("item2.jpg"));
+		randomItem1 = new Texture(Gdx.files.internal("randomItem1.jpg"));
 
 		inventoryBackground = new Texture(Gdx.files.internal("inventory.jpg"));
 
@@ -134,16 +137,28 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 	private void placeItems() { //maaritellaan poimittavat tavarat yms
 
-		pickableItemList.add (new PickableItem("tavara1", item1,128, 128));
-		pickableItemList.add (new PickableItem("tavara2", item1,512, 128));
-		pickableItemList.add (new PickableItem("tavara3", item1,1024, 1024));
-		pickableItemList.add (new PickableItem("tavara4", item1,2048, 1024));
-		pickableItemList.add (new PickableItem("tavara5", item1, 1536, 1536));
-		pickableItemList.add (new PickableItem("tavara6", item1,4096, 768));
 
-		pickableItemList.add(new PickableItem("avain1", item2, 800, 1792));
-		pickableItemList.add(new PickableItem("avain2", item2, 2048, 1792));
-		pickableItemList.add(new PickableItem("avain3", item2, 1536, 128));
+		if (currentLevel == 1) {
+			pickableItemList.add (new PickableItem("tavara1", item1,128, 128));
+			pickableItemList.add (new PickableItem("tavara2", item1,512, 128));
+			pickableItemList.add (new PickableItem("tavara3", item1,1024, 1024));
+			pickableItemList.add (new PickableItem("tavara4", item1,2048, 1024));
+			pickableItemList.add (new PickableItem("tavara5", item1, 1536, 1536));
+			pickableItemList.add (new PickableItem("tavara6", item1,4096, 768));
+			pickableItemList.add (new PickableItem("tavara7", item1, 1664, 1664));
+			pickableItemList.add (new PickableItem("tavara8", item1,4096, 768));
+
+			pickableItemList.add(new PickableItem("avain1", item2, 800, 1792));
+			pickableItemList.add(new PickableItem("avain2", item2, 2048, 1792));
+			pickableItemList.add(new PickableItem("avain3", item2, 1536, 128));
+			pickableItemList.add(new PickableItem("avain4", item2, 1280, 1280));
+			pickableItemList.add(new PickableItem("avain5", item2, 640, 640));
+
+			enableRandomSpawns = true;
+			randomMaxItems = 20;
+			randomSpawnInterval = 2;
+		}
+
 	}
 
 	@Override
@@ -153,8 +168,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		batch.setProjectionMatrix(camera.combined);
 		camera.update();
-
-		//System.out.println(playerPosX);
 
 		Gdx.gl.glClearColor(0.398f, 1, 1, 0);
 		Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT );
@@ -187,6 +200,16 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			playerAnimationStateTime = 0.025f;
 		}
 
+		if (enableRandomSpawns) {
+			if (randomMaxItems > randomItemsOnMap) {
+				randomSpawnTime += Gdx.graphics.getDeltaTime();
+					if (randomSpawnTime >= randomSpawnInterval) {
+						pickableItemList.add(new RandomSpawnPickableItem("random", randomItem1));
+						randomItemsOnMap++;
+						randomSpawnTime = 0;
+					}
+			}
+		}
 	}
 
 	private void drawTextures() {
@@ -194,29 +217,20 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			tiledMapRenderer.setView(camera);
 			tiledMapRenderer.render();
 		}
-		//batch.draw(button, 500, 500);
-		//batch.draw(map, 0, 0);
-		batch.begin();
 
+		batch.begin();
 
 		for (int i = 0; i <= 5; i++) {
 			batch.draw(greenObject, -300 + i * 200, -300);
 			batch.draw(greenObject, -300, -300 + i * 200);
 		}
 
-		//batch.draw(button, camera.position.x, camera.position.y); //debug kameran paikka
 
-		/*if (actionPointsEnabled) {
-			for (int i = 0; i < actionCoordinatesX.size(); i++) {
-				batch.draw(item1, actionCoordinatesX.get(i), actionCoordinatesY.get(i));
+		if (drawPickableItems) {
+			for (int i = 0; i < pickableItemList.size(); i++) {
+				batch.draw(pickableItemList.get(i).getItemTexture(), pickableItemList.get(i).getItemCoordinateX(), pickableItemList.get(i).getItemCoordinateY());
 			}
-		}*/
-
-		for (int i = 0; i < pickableItemList.size(); i++) {
-			batch.draw(pickableItemList.get(i).getItemTexture(), pickableItemList.get(i).getItemCoordinateX(), pickableItemList.get(i).getItemCoordinateY());
 		}
-
-		//batch.draw(pickableItem.getItemTexture(), pickableItem.getItemCoordinateX(), pickableItem.getItemCoordinateY());
 
 		batch.end();
 
@@ -232,8 +246,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		float cX = camera.position.x;
 		float cY = camera.position.y;
-
-		//System.out.println(cX);
 
 		//left
 		batch.draw(button, cX - 900, cY - 350);
@@ -257,22 +269,32 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		batch.begin();
 
-		System.out.println("DRAW INVENTORY()");
+		//System.out.println("DRAW INVENTORY()");
 
 		float inventoryCoordinateX = camera.position.x - 550;
 		float inventoryCoordinateY = camera.position.y - 200;
 
 		batch.draw(inventoryBackground, inventoryCoordinateX, inventoryCoordinateY);
 
+		Inventory.goFirstRow();
+
+		Inventory.setItemRowNumber(0);
 		for (int i = 0; i < inventory.size(); i++) {
-			System.out.println(inventory.size());
-			//batch.draw(greenObject, inventoryCoordinateX, inventoryCoordinateY);
-			if (Inventory.getObjectsDrawn() > Inventory.getItemsPerRow()) {
+			if (Inventory.getItemRowNumber() >= Inventory.getItemsPerRow()) {
 				Inventory.goNextRow();
-				Inventory.setObjectsDrawn(0);
+				Inventory.setItemRowNumber(0);
 			}
-			batch.draw(inventory.get(i).getTexture(), inventoryCoordinateX + 50 + Inventory.getDistanceBetweenObjectsX() * i,
-					inventoryCoordinateY + inventoryBackground.getHeight() - Inventory.getDistanceBetweenObjectsY());
+			//System.out.println(inventory.size());
+			batch.draw(inventory.get(i).getTexture(), inventoryCoordinateX + 50 + Inventory.getDistanceBetweenObjectsX() * Inventory.getItemRowNumber(),
+					inventoryCoordinateY + inventoryBackground.getHeight() - Inventory.getDistanceBetweenObjectsY() - Inventory.getDistanceBetweenObjectsY()*Inventory.getRow());
+
+			if (!inventory.get(i).isPositionSaved()) {
+				inventory.get(i).setDrawnPosX(440 + Inventory.getDistanceBetweenObjectsX() * Inventory.getItemRowNumber()+1 );
+				inventory.get(i).setDrawnPosY(Inventory.getDistanceBetweenObjectsY() * (Inventory.getRow()+1) + 165);
+			inventory.get(i).setPositionSaved();
+			}
+
+			Inventory.nextItemRowNumber();
 		}
 
 		batch.end();
@@ -332,7 +354,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		for (int i = 0; i < pickableItemList.size(); i++) {
 			if (camera.position.x - pickableItemList.get(i).getItemCoordinateX() <= distanceToObject && camera.position.x - pickableItemList.get(i).getItemCoordinateX() >= -distanceToObject
-					&& camera.position.y - pickableItemList.get(i).getItemCoordinateY() <= distanceToObject && camera.position.y - pickableItemList.get(i).getItemCoordinateY() >= -distanceToObject)
+					&& camera.position.y - pickableItemList.get(i).getItemCoordinateY() <= distanceToObject + 50 && camera.position.y - pickableItemList.get(i).getItemCoordinateY() >= -distanceToObject)
 			{
 				System.out.println("NEAR POINT:  " + Integer.toString(i));
 				pickUpItem(i);
@@ -341,10 +363,23 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	}
 
 	private void pickUpItem(int i) {
-		System.out.println("PICKUP " + Integer.toString(i));
-		showToast("PICKED UP: " + pickableItemList.get(i).getItemName());
-		inventory.add(new Inventory(pickableItemList.get(i).getItemName(), pickableItemList.get(i).getItemTexture()));
-		pickableItemList.remove(i);
+		if (inventory.size() >= Inventory.getMaxRows() * Inventory.getItemsPerRow()) {
+			Inventory.setFull(true);
+		} else {
+			Inventory.setFull(false);
+		}
+
+		if (!Inventory.checkIsFull()) {
+			System.out.println("PICKUP " + Integer.toString(i));
+			showToast("PICKED UP: " + pickableItemList.get(i).getItemName());
+			inventory.add(new Inventory(pickableItemList.get(i).getItemName(), pickableItemList.get(i).getItemTexture()));
+			if (pickableItemList.get(i).getItemName().equals("random")) {
+				randomItemsOnMap--;
+			}
+			pickableItemList.remove(i);
+		} else {
+			showToast("INVENTORY IS FULL!");
+		}
 	}
 
 	private void showInventory() {
@@ -378,9 +413,9 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		if (movementEnabled && uiButtonsEnabled) { //liikkuminen
 			if (screenX > 30 && screenX < 220 && screenY > 700 && screenY < 900) {
-				moveLeft(moveAmount);
-				playPlayerAnimation();
-			}
+					moveLeft(moveAmount);
+					playPlayerAnimation();
+				}
 
 			if (screenX > 340 && screenX < 500 && screenY > 700 && screenY < 900) {
 				moveRight(moveAmount);
@@ -401,7 +436,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		if (uiButtonsEnabled) { //toimintanappi
 			if (screenX > 1670 && screenX < 1910 && screenY > 850 && screenY < 1050) {
 				checkAction();
-			}
+            }
 		}
 
 		if (uiButtonsEnabled && !drawInventory) { //inventory on
@@ -410,9 +445,21 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			}
 		}
 
-		if(uiButtonsEnabled && drawInventory){ //inventory off
-			if (screenY > 600) {
+		if (uiButtonsEnabled && drawInventory){ //inventory off
+			if (screenY > 800 || screenX < 300 || screenX > 1600 ) {
 				drawInventory = false;
+			}
+		}
+
+		if (drawInventory) { //tavaran valinta inventorysta
+			for (int i = 0; i < inventory.size(); i++) {
+				//System.out.println(Float.toString(inventory.get(i).getDrawnPosX()));
+				//System.out.println(Float.toString(inventory.get(i).getDrawnPosX() + inventory.get(i).getTexture().getWidth()));
+				if (screenX > inventory.get(i).getDrawnPosX() && screenX < inventory.get(i).getDrawnPosX() + Inventory.getDistanceBetweenObjectsX() - 30
+				&& screenY > inventory.get(i).getDrawnPosY() && screenY < inventory.get(i).getDrawnPosY() + Inventory.getDistanceBetweenObjectsY() - 30) {
+					showToast(inventory.get(i).getItemName());
+					System.out.println("ITEM HERE");
+				}
 			}
 		}
 

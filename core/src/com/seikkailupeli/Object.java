@@ -9,8 +9,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Object extends Seikkailupeli {
 
-    public Texture itemTexture;
-    public String itemName;
+    protected Texture itemTexture;
+    protected String itemName;
 
     protected int objectCoordinateX;
     protected int objectCoordinateY;
@@ -18,25 +18,12 @@ public class Object extends Seikkailupeli {
     public Object() {
 
     }
-}
 
-class PickableItem extends Object {
-
-    public Texture itemTexture;
-    public String itemName;
-
-    public PickableItem(String name, Texture texture, int itemCoordinateX, int itemCoordinateY) {
-
-        itemName = name;
-        itemTexture = texture;
-        objectCoordinateX = itemCoordinateX;
-        objectCoordinateY = itemCoordinateY;
-    }
 
     public String getItemName() {
         return itemName;
-
     }
+
     public Texture getItemTexture() {
         return itemTexture;
     }
@@ -47,6 +34,39 @@ class PickableItem extends Object {
 
     public int getItemCoordinateY() {
         return objectCoordinateY;
+    }
+}
+
+class PickableItem extends Object {
+
+
+    public PickableItem() {
+
+    }
+
+    public PickableItem(String name, Texture texture, int itemCoordinateX, int itemCoordinateY) {
+
+        itemName = name;
+        itemTexture = texture;
+        objectCoordinateX = itemCoordinateX;
+        objectCoordinateY = itemCoordinateY;
+    }
+
+}
+
+class RandomSpawnPickableItem extends PickableItem {
+
+
+    public RandomSpawnPickableItem(String name, Texture texture) {
+        itemName = name;
+        itemTexture = texture;
+        randomizeCoordinates();
+    }
+
+    public void randomizeCoordinates() {
+        objectCoordinateX = (int) (1 + Math.random() * 50) * 128;
+        objectCoordinateY = (int) (1 + Math.random() * 50) * 128;
+        //return new int [] {objectCoordinateX, objectCoordinateY};
     }
 
 }
