@@ -274,6 +274,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		float inventoryCoordinateX = camera.position.x - 550;
 		float inventoryCoordinateY = camera.position.y - 200;
 
+		
 		batch.draw(inventoryBackground, inventoryCoordinateX, inventoryCoordinateY);
 
 		Inventory.goFirstRow();
