@@ -2,37 +2,34 @@
 
 package com.seikkailupeli;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Object extends Seikkailupeli {
 
-    protected Texture itemTexture;
-    protected String itemName;
+    Texture itemTexture;
+    String itemName;
 
-    protected int objectCoordinateX;
-    protected int objectCoordinateY;
+    int objectCoordinateX;
+    int objectCoordinateY;
 
     public Object() {
 
     }
 
 
-    public String getItemName() {
+    String getItemName() {
         return itemName;
     }
 
-    public Texture getItemTexture() {
+    Texture getItemTexture() {
         return itemTexture;
     }
 
-    public int getItemCoordinateX() {
+    int getItemCoordinateX() {
         return objectCoordinateX;
     }
 
-    public int getItemCoordinateY() {
+    int getItemCoordinateY() {
         return objectCoordinateY;
     }
 }
@@ -40,11 +37,11 @@ public class Object extends Seikkailupeli {
 class PickableItem extends Object {
 
 
-    public PickableItem() {
+    PickableItem() {
 
     }
 
-    public PickableItem(String name, Texture texture, int itemCoordinateX, int itemCoordinateY) {
+    PickableItem(String name, Texture texture, int itemCoordinateX, int itemCoordinateY) {
 
         itemName = name;
         itemTexture = texture;
@@ -56,17 +53,15 @@ class PickableItem extends Object {
 
 class RandomSpawnPickableItem extends PickableItem {
 
-
-    public RandomSpawnPickableItem(String name, Texture texture) {
+    RandomSpawnPickableItem(String name, Texture texture) {
         itemName = name;
         itemTexture = texture;
         randomizeCoordinates();
     }
 
-    public void randomizeCoordinates() {
+    private void randomizeCoordinates() {
         objectCoordinateX = (int) (1 + Math.random() * 50) * 128;
         objectCoordinateY = (int) (1 + Math.random() * 50) * 128;
-        //return new int [] {objectCoordinateX, objectCoordinateY};
     }
 
 }

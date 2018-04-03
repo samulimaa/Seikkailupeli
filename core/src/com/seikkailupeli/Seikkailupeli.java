@@ -21,10 +21,14 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,8 +60,9 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private boolean movementEnabled = true;
 	private boolean drawPickableItems = true;
 	private boolean drawInventory = false;
+	private boolean drawCharacters = true;
 	private boolean enableRandomSpawns;
-	private boolean touchpadEnabled = true;
+	private boolean inputControlsEnabled = true;
 	private boolean touchInput = true;
 
 	private Animation<TextureRegion> animation; // Must declare frame type (TextureRegion)
@@ -75,13 +80,22 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private Drawable touchKnob;
 
 	private Texture button;
-	private Texture actionButton;
+	private Texture actionButtonTexture;
 	private Texture animationSheet;
 	private Texture greenObject;
 	private Texture item1;
 	private Texture item2;
 	private Texture randomItem1;
+	private Texture inventoryButtonTexture;
 	private Texture inventoryBackground;
+	private Texture character1;
+
+	private ImageButton actionImageButton;
+	private ImageButton inventoryImageButton;
+	private TextureRegion actionButtonTextureRegion;
+	private TextureRegion inventoryButtonTextureRegion;
+	private TextureRegionDrawable actionButtonTextureRegionDrawable;
+	private TextureRegionDrawable inventoryButtonTextureRegionDrawable;
 
 	private TiledMap tiledMap;
 	private TiledMapRenderer tiledMapRenderer;
@@ -94,11 +108,10 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private Body player;
 
 	private List<PickableItem> pickableItemList = new ArrayList<PickableItem>();
-	//private List<RandomSpawnPickableItem> randomSpawnPickableItemList = new ArrayList<RandomSpawnPickableItem>();
+	private List<Character> characterList = new ArrayList<Character>();
 	private List<Inventory> inventory = new ArrayList<Inventory>();
 
-	private boolean leftPressed, rightPressed, upPressed, downPressed, actionButtonDown;
-	//private Vector2 playerMovement = new Vector2();
+	private boolean actionButtonDown;
 
 
 	@Override
@@ -134,14 +147,25 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		batch = new SpriteBatch();
 
 		button = new Texture(Gdx.files.internal("button.jpg"));
-		actionButton = new Texture(Gdx.files.internal("actionButton.jpg"));
+		actionButtonTexture = new Texture(Gdx.files.internal("actionButton.jpg"));
+		inventoryButtonTexture = new Texture(Gdx.files.internal("inventoryButton.png"));
 
 		System.out.println("CREATE 4");
+
+		actionButtonTextureRegion = new TextureRegion(actionButtonTexture);
+		actionButtonTextureRegionDrawable = new TextureRegionDrawable(actionButtonTextureRegion);
+		actionImageButton = new ImageButton(actionButtonTextureRegionDrawable);
+
+		inventoryButtonTextureRegion = new TextureRegion(inventoryButtonTexture);
+		inventoryButtonTextureRegionDrawable = new TextureRegionDrawable(inventoryButtonTextureRegion);
+		inventoryImageButton = new ImageButton(inventoryButtonTextureRegionDrawable);
 
 		greenObject = new Texture(Gdx.files.internal("greenObject.jpg"));
 		item1 = new Texture(Gdx.files.internal("item1.jpg"));
 		item2 = new Texture(Gdx.files.internal("item2.jpg"));
 		randomItem1 = new Texture(Gdx.files.internal("randomItem1.jpg"));
+
+		character1 = new Texture(Gdx.files.internal("character1.png"));
 
 		inventoryBackground = new Texture(Gdx.files.internal("inventory.jpg"));
 
@@ -168,13 +192,13 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		System.out.println("CREATE 5");
 
-		initializeTouchpad();
+		initializeInputControls();
 
-		placeItems();
+		placeItemsAndCharacters();
 
 	}
 
-	private void initializeTouchpad() {
+	private void initializeInputControls() {
 
 		touchpadSkin = new Skin();
 		touchpadSkin.add("touchBackground", new Texture("touchBackground.png"));
@@ -189,12 +213,29 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		touchpad.setBounds(20, 20, 300, 300);
 		touchpad.setResetOnTouchUp(true);
 
+		actionImageButton.addListener(new ClickListener() { //toimintonappi
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				checkAction();
+			}
+		});
+
+		inventoryImageButton.addListener(new ClickListener() { //tavaraluettelo
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				drawInventory = true;
+			}
+		});
+
 		stage = new Stage();
 		stage.addActor(touchpad);
+		stage.addActor(actionImageButton);
+		stage.addActor(inventoryImageButton);
 
 	}
 
-	private void placeItems() { //maaritellaan poimittavat tavarat yms
+
+	private void placeItemsAndCharacters() { //maaritellaan poimittavat tavarat yms
 
 
 		if (currentLevel == 1) {
@@ -216,13 +257,17 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			enableRandomSpawns = true;
 			randomMaxItems = 20;
 			randomSpawnInterval = 2;
-		}
 
+			characterList.add(new Character("hahmo1", character1, 1792, 1152, "HELLO!"));
+			characterList.add(new Character("hahmo2", character1, 1792, 256, "HELLO HELLO HELLO!"));
+			characterList.add(new Character("hahmo3", character1, 3520, 1152, "HEY HEY!"));
+			characterList.add(new Character("hahmo4", character1, 1024, 1152));
+
+		}
 	}
 
 	@Override
 	public void render () {
-
 		update();
 
 		//System.out.println("RENDER");
@@ -243,6 +288,8 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		if (drawInventory) {
 			drawInventory();
+		} else {
+			Gdx.input.setInputProcessor(stage);
 		}
 
 		if (toast != null)
@@ -272,13 +319,10 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			}
 		}
 
-		if (touchpadEnabled) {
-			handleTouchPad();
+		if (inputControlsEnabled) {
+			handleTouchpad();
 		}
 
-
-		//b2dr.render(world, camera.combined);
-		//player.applyForceToCenter(playerMovement,true);
 	}
 
 	private void drawTextures() {
@@ -301,6 +345,12 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			}
 		}
 
+		if (drawCharacters) {
+			for (int i = 0; i < characterList.size(); i++) {
+				batch.draw(characterList.get(i).getCharacterTexture(), characterList.get(i).getCharacterCoordinateX(), characterList.get(i).getCharacterCoordinateY());
+			}
+		}
+
 		batch.end();
 
 		TextureRegion currentFrame = animation.getKeyFrame(playerAnimationStateTime, true);
@@ -310,7 +360,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	}
 
 
-	public void update() {
+	private void update() {
 		world.step(1/60f,6,2);
 		Vector3 position = camera.position;
 		position.x = player.getPosition().x;
@@ -321,30 +371,21 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 
 	private void drawButtons() {
+
 		batch.begin();
 
-		float cX = camera.position.x;
-		float cY = camera.position.y;
-
-		//left
-		//batch.draw(button, cX - 900, cY - 350);
-
-		//right
-		//batch.draw(button, cX - 600, cY - 350);
-
-		//up
-		//batch.draw(button, cX - 750, cY - 200);
-
-		//down
-		//batch.draw(button, cX - 750, cY - 500);
-
-		//action button
-		batch.draw(actionButton, cX + 750, cY - 500);
+		touchpad.setPosition(50, 50 );
+		actionImageButton.setPosition(1650, 50);
+		inventoryImageButton.setPosition(0,780);
+		stage.act(Gdx.graphics.getDeltaTime());
+		stage.draw();
 
 		batch.end();
 	}
 
 	private void drawInventory() {
+
+		Gdx.input.setInputProcessor(this);
 
 		batch.begin();
 
@@ -352,7 +393,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		float inventoryCoordinateX = camera.position.x - 550;
 		float inventoryCoordinateY = camera.position.y - 200;
-
 
 		batch.draw(inventoryBackground, inventoryCoordinateX, inventoryCoordinateY);
 
@@ -408,38 +448,25 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		button.dispose();
 		spriteBatch.dispose();
 		greenObject.dispose();
-		actionButton.dispose();
+		actionButtonTexture.dispose();
 		animationSheet.dispose();
 		tiledMap.dispose();
 	}
 
 	
-	void handleTouchPad() {
-		if (touchpadEnabled) {
-
-			if(touchInput) {
-				Gdx.input.setInputProcessor(stage);
-				touchInput = false;
-			} else {
-				Gdx.input.setInputProcessor(this);
-				touchInput = true;
-			}
+	private void handleTouchpad() {
+		if (inputControlsEnabled) {
 
 			//Vector2 velocity = player.getLinearVelocity();
 			player.setLinearVelocity(touchpad.getKnobPercentX(), touchpad.getKnobPercentY());
 			player.setTransform((player.getLinearVelocity().x * 7) + player.getPosition().x, (player.getLinearVelocity().y * 7) + player.getPosition().y, 0);
-			if (touchpad.getKnobPercentX() != 0 && touchpad.getKnobPercentY() != 00) {
+			if (touchpad.getKnobPercentX() != 0 && touchpad.getKnobPercentY() != 0) {
 				playPlayerAnimation();
 				drawInventory = false;
 			}
-
-			touchpad.setPosition(50, 50 );
-			stage.act(Gdx.graphics.getDeltaTime());
-			stage.draw();
 		}
 		
 	}
-	
 
 	private void playPlayerAnimation() {
 
@@ -452,22 +479,30 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 	private void checkAction() 		//tarkista onko pelaajan lahella toimintoja
 	{
-		System.out.println("CHECK ACTION! x = " + Float.toString(camera.position.x) +"  y = "+ Float.toString(camera.position.y));
+		System.out.println("CHECK ACTION! x = " + Float.toString(camera.position.x) + "  y = " + Float.toString(camera.position.y));
 
-		int distanceToObject = 100;
+		int maxDistanceToObject = 90;
+		int maxDistanceToCharacter = 160;
 
 		showInventory();
 
-		for (int i = 0; i < pickableItemList.size(); i++) {
-			if (camera.position.x - pickableItemList.get(i).getItemCoordinateX() <= distanceToObject && camera.position.x - pickableItemList.get(i).getItemCoordinateX() >= -distanceToObject
-					&& camera.position.y - pickableItemList.get(i).getItemCoordinateY() <= distanceToObject + 50 && camera.position.y - pickableItemList.get(i).getItemCoordinateY() >= -distanceToObject)
-			{
+		for (int i = 0; i < pickableItemList.size(); i++) { //tarkista onko tavaroita lahella
+			if (camera.position.x - pickableItemList.get(i).getItemCoordinateX() <= maxDistanceToObject && camera.position.x - pickableItemList.get(i).getItemCoordinateX() >= -maxDistanceToObject
+					&& camera.position.y - pickableItemList.get(i).getItemCoordinateY() <= maxDistanceToObject + 50 && camera.position.y - pickableItemList.get(i).getItemCoordinateY() >= -maxDistanceToObject) {
 				System.out.println("NEAR POINT:  " + Integer.toString(i));
 				pickUpItem(i);
 			}
 		}
-	}
 
+		for (int i = 0; i < characterList.size(); i++) { //tarkista onko hahmoja lahella
+			if (camera.position.x - characterList.get(i).getCharacterCoordinateX() <= maxDistanceToCharacter && camera.position.x - characterList.get(i).getCharacterCoordinateX() >= -maxDistanceToCharacter
+					&& camera.position.y - characterList.get(i).getCharacterCoordinateY() <= maxDistanceToCharacter + 50 && camera.position.y - characterList.get(i).getCharacterCoordinateY() >= -maxDistanceToCharacter) {
+				if (characterList.get(i).getCharacterDialog() != null) {
+					showToast(characterList.get(i).getCharacterDialog(), Toast.Length.SHORT);
+				}
+			}
+		}
+	}
 	private void pickUpItem(int i) { //tavaroiden poiminta maasta
 		if (inventory.size() >= Inventory.getMaxRows() * Inventory.getItemsPerRow()) {
 			Inventory.setFull(true);
@@ -477,14 +512,14 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		if (!Inventory.checkIsFull()) {
 			System.out.println("PICKUP " + Integer.toString(i));
-			showToast("PICKED UP: " + pickableItemList.get(i).getItemName());
+			showToast("PICKED UP: " + pickableItemList.get(i).getItemName(), Toast.Length.SHORT);
 			inventory.add(new Inventory(pickableItemList.get(i).getItemName(), pickableItemList.get(i).getItemTexture()));
 			if (pickableItemList.get(i).getItemName().equals("random")) {
 				randomItemsOnMap--;
 			}
 			pickableItemList.remove(i);
 		} else {
-			showToast("INVENTORY IS FULL!");
+			showToast("INVENTORY IS FULL!", Toast.Length.SHORT);
 		}
 	}
 
@@ -504,58 +539,17 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	}
 
 
-	private void showToast(String text) {
+	private void showToast(String text, Toast.Length time) {
 		font = new BitmapFont();
 		font.getData().setScale(3);
 		Toast.ToastFactory toastFactory = new Toast.ToastFactory.Builder().font(font).build();
-		toast = toastFactory.create(text, Toast.Length.SHORT);
+		toast = toastFactory.create(text, time);
 	}
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 		System.out.println("TOUCHDOWN! " + "X: " + String.valueOf(screenX) + "  Y:  " + String.valueOf(screenY));
-
-		//int moveAmount = 128;
-
-		/*if (movementEnabled && uiButtonsEnabled) { //vanha liikkuminen
-			if (screenX > 30 && screenX < 220 && screenY > 700 && screenY < 900) {
-				//moveLeft(moveAmount);
-				playPlayerAnimation();
-				leftPressed = true;
-				}
-
-			if (screenX > 340 && screenX < 500 && screenY > 700 && screenY < 900) {
-				//moveRight(moveAmount);
-				playPlayerAnimation();
-				rightPressed = true;
-			}
-
-			if (screenX > 200 && screenX < 360 && screenY > 600 && screenY < 740) {
-				//moveUp(moveAmount);
-				playPlayerAnimation();
-				upPressed = true;
-			}
-
-			if (screenX > 200 && screenX < 360 && screenY > 900 && screenY < 1064) {
-				//moveDown(moveAmount);
-				playPlayerAnimation();
-				downPressed = true;
-			}
-		}*/
-
-		if (uiButtonsEnabled) { //toimintanappi
-			if (screenX > 1670 && screenX < 1910 && screenY > 850 && screenY < 1050) {
-				checkAction();
-				actionButtonDown = true;
-
-            }
-		}
-
-		if (uiButtonsEnabled && !drawInventory) { //inventory on
-			if (screenY < 200) {
-				drawInventory = true;
-			}
-		}
+		
 
 		if (uiButtonsEnabled && drawInventory){ //inventory off
 			if (screenY > 800 || screenX < 300 || screenX > 1600 ) {
@@ -569,14 +563,13 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 				//System.out.println(Float.toString(inventory.get(i).getDrawnPosX() + inventory.get(i).getTexture().getWidth()));
 				if (screenX > inventory.get(i).getDrawnPosX() && screenX < inventory.get(i).getDrawnPosX() + Inventory.getDistanceBetweenObjectsX() - 30
 				&& screenY > inventory.get(i).getDrawnPosY() && screenY < inventory.get(i).getDrawnPosY() + Inventory.getDistanceBetweenObjectsY() - 30) {
-					showToast(inventory.get(i).getItemName());
+					showToast(inventory.get(i).getItemName(), Toast.Length.SHORT);
 					System.out.println("ITEM HERE");
 				}
 			}
 		}
-
-
-		if (movementEnabled && !uiButtonsEnabled) { //ruudun reunoilta liikkuminen (ei kayteta)
+		
+		/*if (movementEnabled && !uiButtonsEnabled) { //ruudun reunoilta liikkuminen (ei kayteta)
 
 			if (screenX < 300) {
 				//moveLeft(moveAmount);
@@ -597,7 +590,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 				//moveDown(moveAmount);
 				playPlayerAnimation();
 			}
-		}
+		}*/
 
 		return false;
 	}
@@ -606,7 +599,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 
 		if (!actionButtonDown) {
-			//player.setLinearVelocity(0)
 		}
 
 		if (actionButtonDown) {

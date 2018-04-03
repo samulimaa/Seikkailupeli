@@ -2,8 +2,7 @@ package com.seikkailupeli;
 
 import com.badlogic.gdx.graphics.Texture;
 
-public class Inventory extends Seikkailupeli {
-
+class Inventory extends Seikkailupeli {
 
     private String itemName;
     private Texture itemTexture;
@@ -21,86 +20,86 @@ public class Inventory extends Seikkailupeli {
 
     private static int itemRowNumber = 0;
 
-    public Inventory(String name, Texture texture) {
+    Inventory(String name, Texture texture) {
         itemName = name;
         itemTexture = texture;
     }
 
-    public String getItemName() {
+    String getItemName() {
         return itemName;
     }
 
-    public Texture getTexture() {
+    Texture getTexture() {
         return itemTexture;
     }
 
-    public void setDrawnPosX(float x) {
+    void setDrawnPosX(float x) {
         drawnPosX = x;
     }
 
-    public float getDrawnPosX() {
+    float getDrawnPosX() {
         return drawnPosX;
     }
 
-    public void setDrawnPosY(float y) {
+    void setDrawnPosY(float y) {
         drawnPosY = y;
     }
 
-    public float getDrawnPosY() {
+    float getDrawnPosY() {
         return drawnPosY;
     }
 
-    public static int getDistanceBetweenObjectsX(){
+    static int getDistanceBetweenObjectsX(){
         return distanceBetweenObjectsX;
     }
 
-    public static int getDistanceBetweenObjectsY() {
+    static int getDistanceBetweenObjectsY() {
         return distanceBetweenObjectsY;
     }
 
-    public static int getItemsPerRow() {
+    static int getItemsPerRow() {
         return itemsPerRow;
     }
 
-    public static int getRow() {
+    static int getRow() {
         return row;
     }
 
-    public static void goNextRow() {
+    static void goNextRow() {
         row++;
 
     }
-    public static void goFirstRow() {
+    static void goFirstRow() {
         row = 0;
     }
 
-    public static int getItemRowNumber()
+    static int getItemRowNumber()
     {
         return itemRowNumber;
     }
-    public static void setItemRowNumber(int number) {
+    static void setItemRowNumber(int number) {
         itemRowNumber = number;
     }
-    public static void nextItemRowNumber() {
+    static void nextItemRowNumber() {
         itemRowNumber++;
     }
 
-    public void setPositionSaved() {
+    void setPositionSaved() {
         positionSaved = true;
     }
-    public boolean isPositionSaved() {
+    boolean isPositionSaved() {
         return positionSaved;
     }
 
-    public static int getMaxRows() {
+    static int getMaxRows() {
         return maxRows;
     }
 
-    public static boolean checkIsFull() {
+    static boolean checkIsFull() {
         return isFull;
     }
 
-    public static void setFull(boolean b) {
+    static void setFull(boolean b) {
         isFull = b;
     }
 }
