@@ -42,6 +42,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private int playerSpawnPosY = 1024;
 	private int playerPosX;
 	private int playerPosY;
+	private int playerSpeed = 8;
 	private int currentLevel = 1;
 	private int randomMaxItems;
 	private int randomItemsOnMap = 0;
@@ -63,7 +64,8 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private boolean drawCharacters = true;
 	private boolean enableRandomSpawns;
 	private boolean inputControlsEnabled = true;
-	private boolean touchInput = true;
+	private boolean actionButtonDown;
+	private boolean characterMovementEnabled = true;
 
 	private Animation<TextureRegion> animation; // Must declare frame type (TextureRegion)
 	private SpriteBatch spriteBatch;
@@ -73,9 +75,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private Toast toast;
 
 	private Touchpad touchpad;
-	private Touchpad.TouchpadStyle touchpadStyle;
 
-	private Skin touchpadSkin;
 	private Drawable touchBackground;
 	private Drawable touchKnob;
 
@@ -86,16 +86,11 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private Texture item1;
 	private Texture item2;
 	private Texture randomItem1;
-	private Texture inventoryButtonTexture;
 	private Texture inventoryBackground;
 	private Texture character1;
 
 	private ImageButton actionImageButton;
 	private ImageButton inventoryImageButton;
-	private TextureRegion actionButtonTextureRegion;
-	private TextureRegion inventoryButtonTextureRegion;
-	private TextureRegionDrawable actionButtonTextureRegionDrawable;
-	private TextureRegionDrawable inventoryButtonTextureRegionDrawable;
 
 	private TiledMap tiledMap;
 	private TiledMapRenderer tiledMapRenderer;
@@ -103,7 +98,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private OrthographicCamera camera;
 	private Stage stage;
 
-	private Box2DDebugRenderer b2dr;
 	private World world;
 	private Body player;
 
@@ -111,16 +105,13 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private List<Character> characterList = new ArrayList<Character>();
 	private List<Inventory> inventory = new ArrayList<Inventory>();
 
-	private boolean actionButtonDown;
-
-
 	@Override
 	public void create () {
 
 		Gdx.input.setInputProcessor(this);
 
 		world = new World(new Vector2(0,0),false);
-		b2dr = new Box2DDebugRenderer();
+		//b2dr = new Box2DDebugRenderer();
 
 		player = createBox(playerSpawnPosX,playerSpawnPosY,32*4,32*4,false);
 
@@ -148,16 +139,16 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		button = new Texture(Gdx.files.internal("button.jpg"));
 		actionButtonTexture = new Texture(Gdx.files.internal("actionButton.jpg"));
-		inventoryButtonTexture = new Texture(Gdx.files.internal("inventoryButton.png"));
+		Texture inventoryButtonTexture = new Texture(Gdx.files.internal("inventoryButton.png"));
 
 		System.out.println("CREATE 4");
 
-		actionButtonTextureRegion = new TextureRegion(actionButtonTexture);
-		actionButtonTextureRegionDrawable = new TextureRegionDrawable(actionButtonTextureRegion);
+		TextureRegion actionButtonTextureRegion = new TextureRegion(actionButtonTexture);
+		TextureRegionDrawable actionButtonTextureRegionDrawable = new TextureRegionDrawable(actionButtonTextureRegion);
 		actionImageButton = new ImageButton(actionButtonTextureRegionDrawable);
 
-		inventoryButtonTextureRegion = new TextureRegion(inventoryButtonTexture);
-		inventoryButtonTextureRegionDrawable = new TextureRegionDrawable(inventoryButtonTextureRegion);
+		TextureRegion inventoryButtonTextureRegion = new TextureRegion(inventoryButtonTexture);
+		TextureRegionDrawable inventoryButtonTextureRegionDrawable = new TextureRegionDrawable(inventoryButtonTextureRegion);
 		inventoryImageButton = new ImageButton(inventoryButtonTextureRegionDrawable);
 
 		greenObject = new Texture(Gdx.files.internal("greenObject.jpg"));
@@ -200,10 +191,10 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 	private void initializeInputControls() {
 
-		touchpadSkin = new Skin();
+		Skin touchpadSkin = new Skin();
 		touchpadSkin.add("touchBackground", new Texture("touchBackground.png"));
 		touchpadSkin.add("touchKnob", new Texture("touchKnob.png"));
-		touchpadStyle = new Touchpad.TouchpadStyle();
+		Touchpad.TouchpadStyle touchpadStyle = new Touchpad.TouchpadStyle();
 
 		touchBackground = touchpadSkin.getDrawable("touchBackground");
 		touchKnob = touchpadSkin.getDrawable("touchKnob");
@@ -258,11 +249,12 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			randomMaxItems = 20;
 			randomSpawnInterval = 2;
 
-			characterList.add(new Character("hahmo1", character1, 1792, 1152, "HELLO!"));
-			characterList.add(new Character("hahmo2", character1, 1792, 256, "HELLO HELLO HELLO!"));
-			characterList.add(new Character("hahmo3", character1, 3520, 1152, "HEY HEY!"));
-			characterList.add(new Character("hahmo4", character1, 1024, 1152));
-
+			characterList.add(new Character("hahmo1", character1, 2944, 1152, 2, 0, 400 , "HELLO!"));
+			characterList.add(new Character("hahmo2", character1, 1792, 1280, 2, 200, 0, "HELLO HELLO HELLO!"));
+			characterList.add(new Character("hahmo3", character1, 3520, 1152, 0, 0, 0,"HEY HEY!"));
+			characterList.add(new Character("hahmo4", character1, 256, 896, 2, 0, 300, "HEY!"));
+			characterList.add(new Character("hahmo5", character1, 1536, 1536, true, "HELLO!!"));
+			characterList.add(new Character("hahmo6", character1, 1408, 1152, true, "HELLO!!!"));
 		}
 	}
 
@@ -347,6 +339,9 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		if (drawCharacters) {
 			for (int i = 0; i < characterList.size(); i++) {
+				if (characterList.get(i).isMovementEnabled()) {
+					characterList.get(i).moveCharacter();
+				}
 				batch.draw(characterList.get(i).getCharacterTexture(), characterList.get(i).getCharacterCoordinateX(), characterList.get(i).getCharacterCoordinateY());
 			}
 		}
@@ -358,7 +353,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		spriteBatch.draw(currentFrame, playerPosX - 50, playerPosY - 40);
 		spriteBatch.end();
 	}
-
 
 	private void update() {
 		world.step(1/60f,6,2);
@@ -374,8 +368,8 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		batch.begin();
 
-		touchpad.setPosition(50, 50 );
-		actionImageButton.setPosition(1650, 50);
+		touchpad.setPosition(80, 80);
+		actionImageButton.setPosition(1650, 80);
 		inventoryImageButton.setPosition(0,780);
 		stage.act(Gdx.graphics.getDeltaTime());
 		stage.draw();
@@ -418,7 +412,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		}
 		batch.end();
 	}
-
 	public Body createBox(int x, int y, int width, int height, boolean isStatic){
 
 		Body pBody;
@@ -459,7 +452,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 			//Vector2 velocity = player.getLinearVelocity();
 			player.setLinearVelocity(touchpad.getKnobPercentX(), touchpad.getKnobPercentY());
-			player.setTransform((player.getLinearVelocity().x * 7) + player.getPosition().x, (player.getLinearVelocity().y * 7) + player.getPosition().y, 0);
+			player.setTransform((player.getLinearVelocity().x * playerSpeed) + player.getPosition().x, (player.getLinearVelocity().y * playerSpeed) + player.getPosition().y, 0);
 			if (touchpad.getKnobPercentX() != 0 && touchpad.getKnobPercentY() != 0) {
 				playPlayerAnimation();
 				drawInventory = false;
@@ -482,7 +475,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		System.out.println("CHECK ACTION! x = " + Float.toString(camera.position.x) + "  y = " + Float.toString(camera.position.y));
 
 		int maxDistanceToObject = 90;
-		int maxDistanceToCharacter = 160;
+		int maxDistanceToCharacter = 140;
 
 		showInventory();
 
@@ -532,10 +525,9 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		}
 
 		for (int i = 0; i < items.size(); i++) {
-			System.out.println(items.get(i));
+			//System.out.println(items.get(i));
 
 		}
-
 	}
 
 
