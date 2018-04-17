@@ -16,7 +16,6 @@ public class Object extends Seikkailupeli {
 
     }
 
-
     String getItemName() {
         return itemName;
     }
@@ -63,5 +62,22 @@ class RandomSpawnPickableItem extends PickableItem {
         objectCoordinateX = (int) (1 + Math.random() * 50) * 128;
         objectCoordinateY = (int) (1 + Math.random() * 50) * 128;
     }
+}
+
+class Door extends Object {
+
+    int doorId;
+
+    public Door(int id, Texture texture, int doorCoordinateX, int doorCoordinateY) {
+        doorId = id;
+        itemTexture = texture;
+        objectCoordinateX = doorCoordinateX;
+        objectCoordinateY = doorCoordinateY;
+    }
+
+    public int getDoorId() {
+        return doorId;
+    }
+
 
 }

@@ -18,7 +18,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -31,6 +30,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
@@ -46,6 +46,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private int currentLevel = 1;
 	private int randomMaxItems;
 	private int randomItemsOnMap = 0;
+	private int currentPuzzleId;
 
 	private float playerAnimationSpeed = 0.025f;
 	private float playerAnimationStateTime;
@@ -66,6 +67,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private boolean inputControlsEnabled = true;
 	private boolean actionButtonDown;
 	private boolean characterMovementEnabled = true;
+	private boolean puzzleRunning = false;
 
 	private Animation<TextureRegion> animation; // Must declare frame type (TextureRegion)
 	private SpriteBatch spriteBatch;
@@ -88,9 +90,15 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private Texture randomItem1;
 	private Texture inventoryBackground;
 	private Texture character1;
+	private Texture settingsButtonTexture;
+	private Texture puzzleBackgroundTexture;
+	private Texture puzzleButtonTexture;
+	private Texture puzzleObjectTexture;
+	private Texture teleportTexture;
 
 	private ImageButton actionImageButton;
 	private ImageButton inventoryImageButton;
+	private ImageButton settingsImageButton;
 
 	private TiledMap tiledMap;
 	private TiledMapRenderer tiledMapRenderer;
@@ -104,6 +112,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private List<PickableItem> pickableItemList = new ArrayList<PickableItem>();
 	private List<Character> characterList = new ArrayList<Character>();
 	private List<Inventory> inventory = new ArrayList<Inventory>();
+	private List<Puzzle> puzzleList = new ArrayList<Puzzle>();
 
 	@Override
 	public void create () {
@@ -138,8 +147,12 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		batch = new SpriteBatch();
 
 		button = new Texture(Gdx.files.internal("button.jpg"));
-		actionButtonTexture = new Texture(Gdx.files.internal("actionButton.jpg"));
-		Texture inventoryButtonTexture = new Texture(Gdx.files.internal("inventoryButton.png"));
+		actionButtonTexture = new Texture(Gdx.files.internal("action_nappi.png"));
+		Texture inventoryButtonTexture = new Texture(Gdx.files.internal("laukkuikoni.png"));
+		settingsButtonTexture = new Texture(Gdx.files.internal("asetukset_ikoni.png"));
+		puzzleObjectTexture = new Texture(Gdx.files.internal("puzzleObject.png"));
+		puzzleButtonTexture = new Texture(Gdx.files.internal("puzzleButton.png"));
+
 
 		System.out.println("CREATE 4");
 
@@ -151,14 +164,19 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		TextureRegionDrawable inventoryButtonTextureRegionDrawable = new TextureRegionDrawable(inventoryButtonTextureRegion);
 		inventoryImageButton = new ImageButton(inventoryButtonTextureRegionDrawable);
 
+		TextureRegion settingsButtonTextureRegion = new TextureRegion(settingsButtonTexture);
+		TextureRegionDrawable settingsButtonTextureRegionDrawable = new TextureRegionDrawable(settingsButtonTextureRegion);
+		settingsImageButton = new ImageButton(settingsButtonTextureRegionDrawable);
+
 		greenObject = new Texture(Gdx.files.internal("greenObject.jpg"));
 		item1 = new Texture(Gdx.files.internal("item1.jpg"));
 		item2 = new Texture(Gdx.files.internal("item2.jpg"));
 		randomItem1 = new Texture(Gdx.files.internal("randomItem1.jpg"));
 
 		character1 = new Texture(Gdx.files.internal("character1.png"));
-
 		inventoryBackground = new Texture(Gdx.files.internal("inventory.jpg"));
+		puzzleBackgroundTexture = new Texture(Gdx.files.internal("Puzzlebackground.png"));
+		teleportTexture = new Texture(Gdx.files.internal("teleport.png"));
 
 		animationSheet = new Texture(Gdx.files.internal("animation_sheet.png"));
 
@@ -184,7 +202,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		System.out.println("CREATE 5");
 
 		initializeInputControls();
-
 		placeItemsAndCharacters();
 
 	}
@@ -192,8 +209,8 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 	private void initializeInputControls() {
 
 		Skin touchpadSkin = new Skin();
-		touchpadSkin.add("touchBackground", new Texture("touchBackground.png"));
-		touchpadSkin.add("touchKnob", new Texture("touchKnob.png"));
+		touchpadSkin.add("touchBackground", new Texture("ohjaustatti_tausta.png"));
+		touchpadSkin.add("touchKnob", new Texture("ohjaustatti.png"));
 		Touchpad.TouchpadStyle touchpadStyle = new Touchpad.TouchpadStyle();
 
 		touchBackground = touchpadSkin.getDrawable("touchBackground");
@@ -201,7 +218,7 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		touchpadStyle.background = touchBackground;
 		touchpadStyle.knob = touchKnob;
 		touchpad = new Touchpad(10, touchpadStyle);
-		touchpad.setBounds(20, 20, 300, 300);
+		touchpad.setBounds(20, 20, 350, 350);
 		touchpad.setResetOnTouchUp(true);
 
 		actionImageButton.addListener(new ClickListener() { //toimintonappi
@@ -218,13 +235,88 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			}
 		});
 
+		settingsImageButton.addListener(new ClickListener() { //asetukset nappi
+			@Override
+			public void clicked(InputEvent event, float x, float y) { System.out.println("SETTINGS");}
+		});
+
 		stage = new Stage();
 		stage.addActor(touchpad);
 		stage.addActor(actionImageButton);
 		stage.addActor(inventoryImageButton);
+		stage.addActor(settingsImageButton);
 
 	}
 
+
+	@Override
+	public void render () {
+
+		if (!puzzleRunning) {
+
+			update();
+
+			//System.out.println("RENDER");
+
+			batch.setProjectionMatrix(camera.combined);
+			camera.update();
+
+			Gdx.gl.glClearColor(0.398f, 1, 1, 0);
+			Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT );
+
+			if (drawObjectEnabled) {
+				drawTextures();
+			}
+
+			if (uiButtonsEnabled) {
+				drawButtons();
+			}
+
+			if (drawInventory) {
+				drawInventory();
+			} else {
+				Gdx.input.setInputProcessor(stage);
+			}
+
+			if (toast != null)
+			{
+				toast.render(Gdx.graphics.getDeltaTime());
+			}
+
+			if (playerAnimationRunning) {
+				playerAnimationStateTime += Gdx.graphics.getDeltaTime(); // Accumulate elapsed animation time
+			}
+
+			playerAnimationTime += Gdx.graphics.getDeltaTime();
+
+			if (playerAnimationTime > 0.2f) {
+				playerAnimationRunning = false;
+				playerAnimationStateTime = 0.025f;
+			}
+
+			if (enableRandomSpawns) {
+				if (randomMaxItems > randomItemsOnMap) {
+					randomSpawnTime += Gdx.graphics.getDeltaTime();
+					if (randomSpawnTime >= randomSpawnInterval) {
+						pickableItemList.add(new RandomSpawnPickableItem("random", randomItem1));
+						randomItemsOnMap++;
+						randomSpawnTime = 0;
+					}
+				}
+			}
+
+			if (inputControlsEnabled) {
+				handleTouchpad();
+			}
+		}
+
+		if (puzzleRunning) {
+			//camera.translate(puzzleList.get(currentPuzzleId).getItemCoordinateX(), puzzleList.get(currentPuzzleId).getItemCoordinateY());
+			//camera.position.set(0, 0, 0);
+			drawPuzzle();
+
+		}
+	}
 
 	private void placeItemsAndCharacters() { //maaritellaan poimittavat tavarat yms
 
@@ -249,72 +341,17 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			randomMaxItems = 20;
 			randomSpawnInterval = 2;
 
-			characterList.add(new Character("hahmo1", character1, 2944, 1152, 2, 0, 400 , "HELLO!"));
-			characterList.add(new Character("hahmo2", character1, 1792, 1280, 2, 200, 0, "HELLO HELLO HELLO!"));
+			//characterList.add(new Character("hahmo1", character1, 2944, 1152, 2, 0, 400 , "HELLO!"));
+			//characterList.add(new Character("hahmo2", character1, 1792, 1280, 2, 200, 0, "HELLO HELLO HELLO!"));
 			characterList.add(new Character("hahmo3", character1, 3520, 1152, 0, 0, 0,"HEY HEY!"));
 			characterList.add(new Character("hahmo4", character1, 256, 896, 2, 0, 300, "HEY!"));
 			characterList.add(new Character("hahmo5", character1, 1536, 1536, true, "HELLO!!"));
 			characterList.add(new Character("hahmo6", character1, 1408, 1152, true, "HELLO!!!"));
+			
+			puzzleList.add(new Puzzle(puzzleObjectTexture, puzzleBackgroundTexture, 1500, 1200, "KYSYMYS", new int[] {0,0,0,0}, new int[] {1,1,1,1},
+					teleportTexture, 1800, 1200, 2800, 1200));
+			//puzzleList.add(new Puzzle(puzzleObjectTexture, puzzleBackgroundTexture, 2500, 800 , "KYSYMYS", new int[] {0,0,0,0}, new int[] {1,2,3,4}));
 		}
-	}
-
-	@Override
-	public void render () {
-		update();
-
-		//System.out.println("RENDER");
-
-		batch.setProjectionMatrix(camera.combined);
-		camera.update();
-
-		Gdx.gl.glClearColor(0.398f, 1, 1, 0);
-		Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT );
-
-		if (drawObjectEnabled) {
-			drawTextures();
-		}
-
-		if (uiButtonsEnabled) {
-			drawButtons();
-		}
-
-		if (drawInventory) {
-			drawInventory();
-		} else {
-			Gdx.input.setInputProcessor(stage);
-		}
-
-		if (toast != null)
-		{
-			toast.render(Gdx.graphics.getDeltaTime());
-		}
-
-		if (playerAnimationRunning) {
-			playerAnimationStateTime += Gdx.graphics.getDeltaTime(); // Accumulate elapsed animation time
-		}
-
-		playerAnimationTime += Gdx.graphics.getDeltaTime();
-
-		if (playerAnimationTime > 0.2f) {
-			playerAnimationRunning = false;
-			playerAnimationStateTime = 0.025f;
-		}
-
-		if (enableRandomSpawns) {
-			if (randomMaxItems > randomItemsOnMap) {
-				randomSpawnTime += Gdx.graphics.getDeltaTime();
-					if (randomSpawnTime >= randomSpawnInterval) {
-						pickableItemList.add(new RandomSpawnPickableItem("random", randomItem1));
-						randomItemsOnMap++;
-						randomSpawnTime = 0;
-					}
-			}
-		}
-
-		if (inputControlsEnabled) {
-			handleTouchpad();
-		}
-
 	}
 
 	private void drawTextures() {
@@ -335,6 +372,14 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			for (int i = 0; i < pickableItemList.size(); i++) {
 				batch.draw(pickableItemList.get(i).getItemTexture(), pickableItemList.get(i).getItemCoordinateX(), pickableItemList.get(i).getItemCoordinateY());
 			}
+		}
+
+		for (int i = 0; i < puzzleList.size(); i++) {
+			if (!puzzleList.get(i).checkIsCorrect()) {
+				batch.draw(puzzleList.get(i).getItemTexture(), puzzleList.get(i).getItemCoordinateX(), puzzleList.get(i).getItemCoordinateY());
+			}
+			batch.draw(puzzleList.get(i).getTeleportAreaTexture(), puzzleList.get(i).getTeleport1Coordinates()[0], puzzleList.get(i).getTeleport1Coordinates()[1]);
+			batch.draw(puzzleList.get(i).getTeleportAreaTexture(), puzzleList.get(i).getTeleport2Coordinates()[0], puzzleList.get(i).getTeleport2Coordinates()[1]);
 		}
 
 		if (drawCharacters) {
@@ -368,9 +413,10 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		batch.begin();
 
-		touchpad.setPosition(80, 80);
-		actionImageButton.setPosition(1650, 80);
-		inventoryImageButton.setPosition(0,780);
+		touchpad.setPosition(70, 70);
+		actionImageButton.setPosition(1610, 70);
+		inventoryImageButton.setPosition(1620,800);
+		settingsImageButton.setPosition(40, 880);
 		stage.act(Gdx.graphics.getDeltaTime());
 		stage.draw();
 
@@ -412,6 +458,69 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		}
 		batch.end();
 	}
+
+	private void drawPuzzle() {
+
+		int[] correctValue = puzzleList.get(currentPuzzleId).getCorrectValue();
+		int[] currentValue = puzzleList.get(currentPuzzleId).getCurrentValue();
+
+		int backgroundOffsetX = puzzleList.get(currentPuzzleId).getBackgroundOffsetX();
+		int backgroundOffsetY = puzzleList.get(currentPuzzleId).getBackgroundOffsetY();
+		int questionOffsetX = puzzleList.get(currentPuzzleId).getQuestionOffsetX();
+		int questionOffsetY = puzzleList.get(currentPuzzleId).getQuestionOffsetY();
+		int numbersOffsetX = puzzleList.get(currentPuzzleId).getNumbersOffsetX();
+		int numbersOffsetY = puzzleList.get(currentPuzzleId).getNumbersOffsetY();
+		int distanceToNextNumber = puzzleList.get(currentPuzzleId).getDistanceToNextButton();
+
+		Gdx.input.setInputProcessor(this);
+
+		//camera.position.set(puzzleList.get(currentPuzzleId).getItemCoordinateX(), puzzleList.get(currentPuzzleId).getItemCoordinateY(), 0);
+
+		Gdx.gl.glClearColor(1, 0, 0, 0);
+		Gdx.gl.glClear( GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT );
+		//System.out.println("PUZZLE " + Integer.toString(currentPuzzleId));
+
+		batch.begin();
+
+		batch.draw(puzzleList.get(currentPuzzleId).getBackgroundTexture(), puzzleList.get(currentPuzzleId).getItemCoordinateX() + backgroundOffsetX,
+				puzzleList.get(currentPuzzleId).getItemCoordinateY() + backgroundOffsetY);
+
+		puzzleList.get(currentPuzzleId).getQuestionFont().draw(batch, puzzleList.get(currentPuzzleId).getQuestion(),
+				puzzleList.get(currentPuzzleId).getItemCoordinateX() + questionOffsetX, puzzleList.get(currentPuzzleId).getItemCoordinateY() + questionOffsetY);
+
+
+		for (int i = 0; i < 4; i++) {
+			puzzleList.get(currentPuzzleId).getNumbersFont().draw(batch, Integer.toString(currentValue[i]),(puzzleList.get(currentPuzzleId).getItemCoordinateX() + numbersOffsetX) + i * distanceToNextNumber,
+					puzzleList.get(currentPuzzleId).getItemCoordinateY() + numbersOffsetY);
+		}
+
+		int firstX = numbersOffsetX + 10;
+		for (int i = 0; i < 4; i++) { //ylhaalla olevat napit
+			batch.draw(puzzleButtonTexture, puzzleList.get(currentPuzzleId).getItemCoordinateX() + firstX, puzzleList.get(currentPuzzleId).getItemCoordinateY() + 30);
+			firstX += distanceToNextNumber;
+		}
+
+		firstX = numbersOffsetX + 20;
+		for (int i = 0; i < 4; i++) { //alhaalla olevat napit
+			batch.draw(puzzleButtonTexture, puzzleList.get(currentPuzzleId).getItemCoordinateX() + firstX, puzzleList.get(currentPuzzleId).getItemCoordinateY() - 290);
+			firstX += distanceToNextNumber;
+		}
+
+		//paluu nappi
+		batch.draw(button, puzzleList.get(currentPuzzleId).getItemCoordinateX() - 850, puzzleList.get(currentPuzzleId).getItemCoordinateY() - 380);
+
+		batch.end();
+
+		if (puzzleList.get(currentPuzzleId).checkIsCorrect()) {
+			puzzleList.get(currentPuzzleId).setValueToOriginal();
+			puzzleRunning = false;
+			Gdx.input.setInputProcessor(stage);
+			showToast("PUZZLE COMPLETED!", 3, Toast.Length.SHORT);
+		}
+
+	}
+
+
 	public Body createBox(int x, int y, int width, int height, boolean isStatic){
 
 		Body pBody;
@@ -458,7 +567,6 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 				drawInventory = false;
 			}
 		}
-		
 	}
 
 	private void playPlayerAnimation() {
@@ -470,12 +578,16 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		playerAnimationTime = 0;
 	}
 
+
+
 	private void checkAction() 		//tarkista onko pelaajan lahella toimintoja
 	{
 		System.out.println("CHECK ACTION! x = " + Float.toString(camera.position.x) + "  y = " + Float.toString(camera.position.y));
 
 		int maxDistanceToObject = 90;
-		int maxDistanceToCharacter = 140;
+		int maxDistanceToCharacter = 100;
+		int maxDistanceToPuzzle = 90;
+		int maxDistanceToTeleport = 140;
 
 		showInventory();
 
@@ -484,6 +596,43 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 					&& camera.position.y - pickableItemList.get(i).getItemCoordinateY() <= maxDistanceToObject + 50 && camera.position.y - pickableItemList.get(i).getItemCoordinateY() >= -maxDistanceToObject) {
 				System.out.println("NEAR POINT:  " + Integer.toString(i));
 				pickUpItem(i);
+				break;
+			}
+		}
+
+		for (int i = 0; i < puzzleList.size(); i++) { //tarkista onko puzzleja lahella
+			if (!puzzleList.get(i).checkIsCorrect()) {
+				if (camera.position.x - puzzleList.get(i).getItemCoordinateX() <= maxDistanceToPuzzle && camera.position.x - puzzleList.get(i).getItemCoordinateX()  >= -maxDistanceToPuzzle
+						&& camera.position.y - puzzleList.get(i).getItemCoordinateY()  <= maxDistanceToPuzzle && camera.position.y - puzzleList.get(i).getItemCoordinateY()  >= -maxDistanceToPuzzle) {
+					System.out.println("NEAR PUZZLE:  " + Integer.toString(i));
+					showPuzzle(i);
+					break;
+				}
+			}
+		}
+
+		for (int i = 0; i < puzzleList.size(); i++) { //tarkista onko puzzlejen teleportteja lahella
+			if (camera.position.x - puzzleList.get(i).getTeleport1Coordinates()[0] <= maxDistanceToTeleport + 80 && camera.position.x - puzzleList.get(i).getTeleport1Coordinates()[0]  >= -maxDistanceToTeleport + 80
+					&& camera.position.y - puzzleList.get(i).getTeleport1Coordinates()[1] <= maxDistanceToTeleport + 120 && camera.position.y - puzzleList.get(i).getTeleport1Coordinates()[1] >= -maxDistanceToTeleport + 120) {
+				System.out.println("NEAR TELEPORT1:  " + Integer.toString(i));
+				if (puzzleList.get(i).checkIsCorrect()) {
+					player.setTransform(puzzleList.get(i).getTeleport2Coordinates()[0] + teleportTexture.getWidth() / 2, puzzleList.get(i).getTeleport1Coordinates()[1] + teleportTexture.getHeight() / 2,
+							player.getAngle());
+				} else {
+					showToast("YOU NEED TO SOLVE PUZZLE FIRST!",3, Toast.Length.SHORT);
+				}
+				break;
+			}
+			if (camera.position.x - puzzleList.get(i).getTeleport2Coordinates()[0] <= maxDistanceToTeleport + 80 && camera.position.x - puzzleList.get(i).getTeleport2Coordinates()[0] >= -maxDistanceToTeleport + 80
+						&& camera.position.y - puzzleList.get(i).getTeleport2Coordinates()[1] <= maxDistanceToTeleport + 120 && camera.position.y - puzzleList.get(i).getTeleport2Coordinates()[1] >= -maxDistanceToTeleport + 120) {
+					System.out.println("NEAR TELEPORT2:  " + Integer.toString(i));
+				if (puzzleList.get(i).checkIsCorrect()) {
+					player.setTransform(puzzleList.get(i).getTeleport1Coordinates()[0] + teleportTexture.getWidth() / 2, puzzleList.get(i).getTeleport1Coordinates()[1] + teleportTexture.getHeight() / 2,
+							player.getAngle());
+				} else {
+					showToast("YOU NEED TO SOLVE PUZZLE FIRST!", 3, Toast.Length.SHORT);
+				}
+				break;
 			}
 		}
 
@@ -491,11 +640,13 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 			if (camera.position.x - characterList.get(i).getCharacterCoordinateX() <= maxDistanceToCharacter && camera.position.x - characterList.get(i).getCharacterCoordinateX() >= -maxDistanceToCharacter
 					&& camera.position.y - characterList.get(i).getCharacterCoordinateY() <= maxDistanceToCharacter + 50 && camera.position.y - characterList.get(i).getCharacterCoordinateY() >= -maxDistanceToCharacter) {
 				if (characterList.get(i).getCharacterDialog() != null) {
-					showToast(characterList.get(i).getCharacterDialog(), Toast.Length.SHORT);
+					showToast(characterList.get(i).getCharacterDialog(), 3, Toast.Length.SHORT);
 				}
+				break;
 			}
 		}
 	}
+
 	private void pickUpItem(int i) { //tavaroiden poiminta maasta
 		if (inventory.size() >= Inventory.getMaxRows() * Inventory.getItemsPerRow()) {
 			Inventory.setFull(true);
@@ -505,15 +656,29 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 
 		if (!Inventory.checkIsFull()) {
 			System.out.println("PICKUP " + Integer.toString(i));
-			showToast("PICKED UP: " + pickableItemList.get(i).getItemName(), Toast.Length.SHORT);
+			showToast("PICKED UP: " + pickableItemList.get(i).getItemName(), 3, Toast.Length.SHORT);
 			inventory.add(new Inventory(pickableItemList.get(i).getItemName(), pickableItemList.get(i).getItemTexture()));
 			if (pickableItemList.get(i).getItemName().equals("random")) {
 				randomItemsOnMap--;
 			}
 			pickableItemList.remove(i);
 		} else {
-			showToast("INVENTORY IS FULL!", Toast.Length.SHORT);
+			showToast("INVENTORY IS FULL!", 3,Toast.Length.SHORT);
 		}
+	}
+	
+	private void showPuzzle(int puzzleId) {
+
+		currentPuzzleId = puzzleId;
+		player.setTransform(puzzleList.get(currentPuzzleId).getItemCoordinateX() + 40, puzzleList.get(currentPuzzleId).getItemCoordinateY() + 40, 0);
+		render();
+
+		if (puzzleList.get(currentPuzzleId).checkIsCorrect()) {
+			puzzleList.get(currentPuzzleId).setValueToOriginal();
+		}
+
+		puzzleRunning = true;
+
 	}
 
 	private void showInventory() {
@@ -530,13 +695,14 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 		}
 	}
 
-
-	private void showToast(String text, Toast.Length time) {
+	private void showToast(String text, int size, Toast.Length time) {
 		font = new BitmapFont();
-		font.getData().setScale(3);
+		font.getData().setScale(size);
 		Toast.ToastFactory toastFactory = new Toast.ToastFactory.Builder().font(font).build();
 		toast = toastFactory.create(text, time);
 	}
+
+
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
@@ -555,35 +721,40 @@ public class Seikkailupeli extends ApplicationAdapter implements InputProcessor{
 				//System.out.println(Float.toString(inventory.get(i).getDrawnPosX() + inventory.get(i).getTexture().getWidth()));
 				if (screenX > inventory.get(i).getDrawnPosX() && screenX < inventory.get(i).getDrawnPosX() + Inventory.getDistanceBetweenObjectsX() - 30
 				&& screenY > inventory.get(i).getDrawnPosY() && screenY < inventory.get(i).getDrawnPosY() + Inventory.getDistanceBetweenObjectsY() - 30) {
-					showToast(inventory.get(i).getItemName(), Toast.Length.SHORT);
+					showToast(inventory.get(i).getItemName(), 3, Toast.Length.SHORT);
 					System.out.println("ITEM HERE");
 				}
 			}
 		}
-		
-		/*if (movementEnabled && !uiButtonsEnabled) { //ruudun reunoilta liikkuminen (ei kayteta)
 
-			if (screenX < 300) {
-				//moveLeft(moveAmount);
-				playPlayerAnimation();
+		if (puzzleRunning) { //puzzle napit
+
+			int buttonPositionX = 450;
+			int buttonPositionY = 450;
+			int touchOffset = 50;
+			int distanceToNextButton = puzzleList.get(currentPuzzleId).getDistanceToNextButton();
+			int buttonSize = puzzleList.get(currentPuzzleId).getButtonSize();
+
+			for (int i = 0; i < 8; i++) {
+				if (screenX > buttonPositionX - touchOffset && screenX < buttonPositionX + buttonSize + touchOffset
+						&& screenY > buttonPositionY - touchOffset && screenY < buttonPositionY + buttonSize + touchOffset) {
+					System.out.println("NAPPI " + Integer.toString(i));
+					puzzleList.get(currentPuzzleId).setCurrentValue(i);
+					break;
+				} else {
+					buttonPositionX += distanceToNextButton;
+					if (i == 3) {
+						buttonPositionX = 500;
+						buttonPositionY += 320;
+					}
+				}
 			}
 
-			if (screenX > 1600) {
-				//moveRight(moveAmount);
-				playPlayerAnimation();
+			if (screenX > 50 && screenX < 260 && screenY < 1040 && screenY > 840) {
+				puzzleRunning = false;
+				Gdx.input.setInputProcessor(stage);
 			}
-
-			if (screenY < 200) {
-				//moveUp(moveAmount);
-				playPlayerAnimation();
-			}
-
-			if (screenY > 900) {
-				//moveDown(moveAmount);
-				playPlayerAnimation();
-			}
-		}*/
-
+		}
 		return false;
 	}
 
