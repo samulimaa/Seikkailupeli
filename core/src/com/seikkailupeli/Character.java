@@ -3,7 +3,7 @@ package com.seikkailupeli;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 
-public class Character extends Seikkailupeli{
+public class Character {
 
     private String characterName;
     private Texture characterTexture;
@@ -11,7 +11,9 @@ public class Character extends Seikkailupeli{
     private int characterCoordinateX;
     private int characterCoordinateY;
 
-    private String characterDialog;
+    private int dialogStart;
+    private int dialogEnd;
+    private boolean dialogsEnabled;
 
     private boolean movementEnabled;
     private int movementMode = 0; //1 = linear movement, 2 = random movement
@@ -32,26 +34,29 @@ public class Character extends Seikkailupeli{
         characterTexture = texture;
         characterCoordinateX = cX;
         characterCoordinateY = cY;
+        dialogsEnabled = false;
         movementEnabled = false;
     }
 
-    Character(String name, Texture texture, int cX, int cY, String dialog) {
+    Character(String name, Texture texture, int cX, int cY, int dialogStart, int dialogEnd) {
+        characterName = name;
+        characterTexture = texture;
+        characterCoordinateX = cX;
+        characterCoordinateY = cY;
+
+        this.dialogStart = dialogStart;
+        this.dialogEnd = dialogEnd;
+        dialogsEnabled = true;
+
+        movementEnabled = false;
+    }
+
+    Character(String name, Texture texture, int cX, int cY, float speed, int limitX, int limitY, int dialogStart, int dialogEnd) { //linear movement
 
         characterName = name;
         characterTexture = texture;
         characterCoordinateX = cX;
         characterCoordinateY = cY;
-        characterDialog = dialog;
-        movementEnabled = false;
-    }
-
-    Character(String name, Texture texture, int cX, int cY, float speed, int limitX, int limitY, String dialog) { //linear movement
-
-        characterName = name;
-        characterTexture = texture;
-        characterCoordinateX = cX;
-        characterCoordinateY = cY;
-        characterDialog = dialog;
         movementSpeed = speed;
         movementLimitX = limitX;
         movementLimitY = limitY;
@@ -61,6 +66,11 @@ public class Character extends Seikkailupeli{
         destinationY = startY + limitY;
         waitTime = ((float) Math.random() * 4.5f) + 0.5f;
         movementMode = 1;
+
+        this.dialogStart = dialogStart;
+        this.dialogEnd = dialogEnd;
+
+        dialogsEnabled = true;
 
         if (limitX > 0) {
             moveDirection = 2;
@@ -81,7 +91,7 @@ public class Character extends Seikkailupeli{
         this.movementEnabled = !(speed == 0);
     }
 
-    Character(String name, Texture texture, int cX, int cY, boolean stayInMap, String dialog) { //random movement
+    Character(String name, Texture texture, int cX, int cY, boolean stayInMap, int dialogStart, int dialogEnd) { //random movement
 
         characterName = name;
         characterTexture = texture;
@@ -89,42 +99,50 @@ public class Character extends Seikkailupeli{
         characterCoordinateY = cY;
         startX = cX;
         startY = cY;
-        characterDialog = dialog;
+
+        this.dialogStart = dialogStart;
+        this.dialogEnd = dialogEnd;
+        dialogsEnabled = true;
+
         randomizeMovement();
         stayInsideMap = stayInMap;
         movementEnabled = true;
         movementMode = 2;
+
+
+
     }
 
     void moveCharacter() {
 
         checkIsWaiting();
 
-        if (stayInsideMap ) {
-            checkIfOutOfMap();
+        if (movementEnabled) {
+            if (stayInsideMap ) {
+                checkIfOutOfMap();
+            }
+
+            if (moveDirection == 1) {
+                moveUp();
+            }
+
+            if (moveDirection == 2) {
+                moveRight();
+            }
+
+            if (moveDirection == 3) {
+                moveDown();
+            }
+
+            if (moveDirection == 4) {
+                moveLeft();
+            }
+
+            if (moveDirection == 0) {
+                System.out.println("DIRECTION = 0");
+
+            }
         }
-
-        if (moveDirection == 1) {
-            moveUp();
-        }
-
-        if (moveDirection == 2) {
-            moveRight();
-        }
-
-        if (moveDirection == 3) {
-            moveDown();
-        }
-
-        if (moveDirection == 4) {
-            moveLeft();
-        }
-
-        if (moveDirection == 0) {
-            System.out.println("DIRECTION = 0");
-
-        }
-
     }
 
     private void moveUp() {
@@ -262,6 +280,15 @@ public class Character extends Seikkailupeli{
         }
     }
 
+    void pauseMovement() {
+        movementEnabled = false;
+    }
+
+    void resumeMovement() {
+        movementEnabled = true;
+    }
+
+
     String getCharacterName() {
         return characterName;
     }
@@ -270,16 +297,28 @@ public class Character extends Seikkailupeli{
         return characterTexture;
     }
 
-    String getCharacterDialog() {
-        return characterDialog;
-    }
-
     int getCharacterCoordinateX() {
         return characterCoordinateX;
     }
 
     int getCharacterCoordinateY() {
         return characterCoordinateY;
+    }
+
+    boolean isDialogsEnabled() {
+        return dialogsEnabled;
+    }
+
+    void setDialogsDisabled() {
+        dialogsEnabled = false;
+    }
+    void setDialogsEnabled() { dialogsEnabled = true;}
+
+    int getDialogStart() {
+        return dialogStart;
+    }
+    int getDialogEnd() {
+        return dialogEnd;
     }
 
     boolean isMovementEnabled() { return movementEnabled;}

@@ -2,7 +2,7 @@ package com.seikkailupeli;
 
 import com.badlogic.gdx.graphics.Texture;
 
-class Inventory extends Seikkailupeli {
+class Inventory {
 
     private String itemName;
     private Texture itemTexture;

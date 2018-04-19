@@ -6,7 +6,7 @@ import com.seikkailupeli.Seikkailupeli;
 
 public class DesktopLauncher {
 	public static void main (String[] arg) {
-		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		new LwjglApplication(new Seikkailupeli(), config);
+		//LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
+		//new LwjglApplication(new Seikkailupeli(), config);
 	}
 }

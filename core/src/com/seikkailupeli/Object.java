@@ -4,7 +4,7 @@ package com.seikkailupeli;
 
 import com.badlogic.gdx.graphics.Texture;
 
-public class Object extends Seikkailupeli {
+public class Object {
 
     Texture itemTexture;
     String itemName;
