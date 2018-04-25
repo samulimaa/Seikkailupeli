@@ -35,6 +35,7 @@ public class Object {
 
 class PickableItem extends Object {
 
+    private static int maxDistance = 90;
 
     PickableItem() {
 
@@ -48,6 +49,10 @@ class PickableItem extends Object {
         objectCoordinateY = itemCoordinateY;
     }
 
+    static int getMaxDistance() {
+        return maxDistance;
+    }
+
 }
 
 class RandomSpawnPickableItem extends PickableItem {
@@ -59,8 +64,8 @@ class RandomSpawnPickableItem extends PickableItem {
     }
 
     private void randomizeCoordinates() {
-        objectCoordinateX = (int) (1 + Math.random() * 50) * 128;
-        objectCoordinateY = (int) (1 + Math.random() * 50) * 128;
+        objectCoordinateX = (int) (1 + Math.random() * 100) * 128;
+        objectCoordinateY = (int) (1 + Math.random() * 100) * 128;
     }
 }
 

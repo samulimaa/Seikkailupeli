@@ -2,11 +2,14 @@ package com.seikkailupeli;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.seikkailupeli.sprites.SideCharacter;
 
 public class Character {
 
     private String characterName;
     private Texture characterTexture;
+    private SideCharacter sideCharacter;
 
     private int characterCoordinateX;
     private int characterCoordinateY;
@@ -27,6 +30,7 @@ public class Character {
     private float waitTime;
     private float timeWaited = 0;
     private boolean isWaiting = false;
+    private static int maxDistance = 100;
 
     Character(String name, Texture texture, int cX, int cY) {
 
@@ -51,10 +55,10 @@ public class Character {
         movementEnabled = false;
     }
 
-    Character(String name, Texture texture, int cX, int cY, float speed, int limitX, int limitY, int dialogStart, int dialogEnd) { //linear movement
+    Character(String name, SideCharacter sd, int cX, int cY, float speed, int limitX, int limitY, int dialogStart, int dialogEnd) { //linear movement
 
         characterName = name;
-        characterTexture = texture;
+        sideCharacter = sd;
         characterCoordinateX = cX;
         characterCoordinateY = cY;
         movementSpeed = speed;
@@ -91,10 +95,10 @@ public class Character {
         this.movementEnabled = !(speed == 0);
     }
 
-    Character(String name, Texture texture, int cX, int cY, boolean stayInMap, int dialogStart, int dialogEnd) { //random movement
+    Character(String name, SideCharacter sd, int cX, int cY, boolean stayInMap, int dialogStart, int dialogEnd) { //random movement
 
         characterName = name;
-        characterTexture = texture;
+        sideCharacter = sd;
         characterCoordinateX = cX;
         characterCoordinateY = cY;
         startX = cX;
@@ -113,9 +117,16 @@ public class Character {
 
     }
 
+
+
     void moveCharacter() {
 
         checkIsWaiting();
+
+        if(isWaiting){
+            sideCharacter.currentState = SideCharacter.State.STANDING;
+        }
+
 
         if (movementEnabled) {
             if (stayInsideMap ) {
@@ -147,8 +158,11 @@ public class Character {
 
     private void moveUp() {
         if (!isWaiting) {
+            sideCharacter.currentState = SideCharacter.State.WALKINGUP;
             this.setCharacterCoordinateY((int) (Gdx.graphics.getDeltaTime() * movementSpeed) + characterCoordinateY + (int) movementSpeed);
         }
+
+
         if (movementMode == 1) {
             if (this.characterCoordinateY > destinationY) {
                 destinationY = startY - movementLimitY;
@@ -156,18 +170,22 @@ public class Character {
                 waitToMove();
             }
         }
-            if (movementMode == 2) {
-                if (this.characterCoordinateY > startY + distance) {
-                    randomizeMovement();
-                    startY = this.characterCoordinateY;
-                    waitToMove();
-                }
+        if (movementMode == 2) {
+            if (this.characterCoordinateY > startY + distance) {
+                randomizeMovement();
+                startY = this.characterCoordinateY;
+                waitToMove();
             }
         }
+    }
     private void moveRight() {
         if (!isWaiting) {
+            sideCharacter.currentState = SideCharacter.State.WALKINGRIGHT;
             this.setCharacterCoordinateX((int) (Gdx.graphics.getDeltaTime() * movementSpeed) + characterCoordinateX + (int) movementSpeed);
         }
+
+
+
         if (movementMode == 1) {
             if (this.characterCoordinateX > destinationX) {
                 destinationX = startX - movementLimitX;
@@ -186,8 +204,12 @@ public class Character {
     }
     private void moveDown() {
         if (!isWaiting) {
+            sideCharacter.currentState = SideCharacter.State.WALKINGDOWN;
             this.setCharacterCoordinateY((int) (Gdx.graphics.getDeltaTime() * movementSpeed) + characterCoordinateY - (int) movementSpeed);
         }
+
+
+
         if (movementMode == 1) {
             if (this.characterCoordinateY < destinationY) {
                 destinationY = startY + movementLimitY;
@@ -205,8 +227,12 @@ public class Character {
     }
     private void moveLeft() {
         if (!isWaiting) {
+            sideCharacter.currentState = SideCharacter.State.WALKINGLEFT;
             this.setCharacterCoordinateX((int) (Gdx.graphics.getDeltaTime() * movementSpeed) + characterCoordinateX - (int) movementSpeed);
         }
+
+
+
         if (movementMode == 1) {
             if (this.characterCoordinateX < destinationX) {
                 destinationX = startX + movementLimitX;
@@ -232,33 +258,33 @@ public class Character {
 
     private void checkIfOutOfMap() {
 
-        if (this.characterCoordinateX < 0) {
+        if (this.characterCoordinateX < 900) {
             this.setCharacterCoordinateX((int) (Gdx.graphics.getDeltaTime() * movementSpeed) + characterCoordinateX + (int) movementSpeed);
-            moveDirection = 2;
+            moveDirection = 2; //Oikealle
             distance = 256;
             moveLeft();
             System.out.println("CHARACTER MAP BORDER -X");
         }
 
-        if (this.characterCoordinateX > 5700) {
+        if (this.characterCoordinateX > 4000) {
             this.setCharacterCoordinateX((int) (Gdx.graphics.getDeltaTime() * movementSpeed) + characterCoordinateX - (int) movementSpeed);
-            moveDirection = 4;
+            moveDirection = 4; //Vasemmalle
             distance = 256;
             moveRight();
             System.out.println("CHARACTER MAP BORDER +X");
         }
 
-        if (this.characterCoordinateY < 0) {
+        if (this.characterCoordinateY < 900) {
             this.setCharacterCoordinateY((int) (Gdx.graphics.getDeltaTime() * movementSpeed) + characterCoordinateY + (int) movementSpeed);
-            moveDirection = 1;
+            moveDirection = 1;//Ylös
             distance = 256;
             moveUp();
             System.out.println("CHARACTER MAP BORDER -Y");
         }
 
-        if (this.characterCoordinateY > 2800) {
+        if (this.characterCoordinateY > 4000) {
             this.setCharacterCoordinateY((int) (Gdx.graphics.getDeltaTime() * movementSpeed) + characterCoordinateY - (int) movementSpeed);
-            moveDirection = 3;
+            moveDirection = 3;//Alas
             distance = 256;
             moveDown();
             System.out.println("CHARACTER MAP BORDER +Y");
@@ -266,6 +292,8 @@ public class Character {
     }
 
     private void waitToMove() {
+
+
         isWaiting = true;
         waitTime = (float) (0.5f + Math.random() * 5);
         timeWaited = 0;
@@ -280,6 +308,8 @@ public class Character {
         }
     }
 
+
+
     void pauseMovement() {
         movementEnabled = false;
     }
@@ -293,8 +323,9 @@ public class Character {
         return characterName;
     }
 
-    Texture getCharacterTexture() {
-        return characterTexture;
+    public TextureRegion getCharacterTexture(float dt) {
+
+        return sideCharacter.getFrame(dt);
     }
 
     int getCharacterCoordinateX() {
@@ -329,5 +360,9 @@ public class Character {
 
     private void setCharacterCoordinateY(int y) {
         characterCoordinateY = y;
+    }
+
+    static int getMaxDistance() {
+        return maxDistance;
     }
 }

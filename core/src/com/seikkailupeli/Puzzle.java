@@ -20,17 +20,20 @@ class Puzzle extends Object {
     private int teleportCoordinateX2;
     private int teleportCoordinateY2;
 
-    private int backgroundOffsetX = -550;
-    private int backgroundOffsetY = -330;
+    private int backgroundOffsetX = -920;
+    private int backgroundOffsetY = -505;
 
     private int questionOffsetX = -300;
     private int questionOffsetY = 550;
 
-    private int numbersOffsetX = -440;
-    private int numbersOffsetY = 0;
+    private int numbersOffsetX = -260;
+    private int numbersOffsetY = 70;
 
-    private int distanceToNextButton = 250;
-    private int buttonSize = 100;
+    private int distanceToNextButton = 160;
+    private int buttonSize = 140;
+
+    private static int maxDistance = 90;
+    private static int maxDistanceTeleport = 140;
 
     private Texture backgroundTexture;
     private Texture teleportAreaTexture;
@@ -58,7 +61,7 @@ class Puzzle extends Object {
         questionFont.getData().setScale(7);
 
         numbersFont = new BitmapFont();
-        numbersFont.getData().setScale(15);
+        numbersFont.getData().setScale(14);
     }
 
     String getQuestion() {
@@ -172,5 +175,12 @@ class Puzzle extends Object {
 
     BitmapFont getNumbersFont() {
         return numbersFont;
+    }
+
+    static int getMaxDistance() {
+        return maxDistance;
+    }
+    static int getMaxDistanceTeleport() {
+        return maxDistanceTeleport;
     }
 }

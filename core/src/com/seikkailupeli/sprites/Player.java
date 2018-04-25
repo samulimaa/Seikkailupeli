@@ -19,13 +19,18 @@ public class Player extends Sprite {
     public enum State{STANDING, WALKINGUP, WALKINGDOWN, WALKINGRIGHT, WALKINGLEFT}
     private State currentState;
     private State previousState;
+    private State previousDirection;
+    private State currentDirection;
     private float stateTimer;
     private boolean walkingup = false;
     private boolean walkingdown = false;
     private boolean walkingright = false;
     private boolean walkingleft = false;
 
-    private Texture img;
+    private Texture imgEteen;
+    private Texture imgTaakse;
+    private Texture imgOikealle;
+    private Texture imgVasemmalle;
     private Texture imgTest;
     private com.badlogic.gdx.graphics.g2d.Animation<TextureRegion> walkingUp;
     private com.badlogic.gdx.graphics.g2d.Animation<TextureRegion> walkingDown;
@@ -47,7 +52,7 @@ public class Player extends Sprite {
     float elapsedTime;
     public Vector2 position;
 
-    public float animationSpeed = 0.25f;
+    int i = 0;
 
 
     public Player(int x,int y, World world){
@@ -59,41 +64,121 @@ public class Player extends Sprite {
         stateTimer = 0;
 
 
-        imgTest = new Texture("nuoli.png");
-        img = new Texture("test2.png");
-
-        TextureRegion[][] tmp = TextureRegion.split(img,
-                img.getWidth() / 3,
-                img.getHeight() / 1);
 
         //Animaatio alaspäin käveltäessä
-        TextureRegion[] walkFrames = new TextureRegion[3];
+        imgEteen = new Texture("Kavely_eteen.png");
+
+        TextureRegion[][] tmp = TextureRegion.split(imgEteen,
+                imgEteen.getWidth() / 3,
+                imgEteen.getHeight() / 3);
+
+        TextureRegion[] walkFrames = new TextureRegion[4];
         int index = 0;
-        for (int i = 0; i < 1; i++) {
-            for (int j = 0; j < 3; j++) {
-                walkFrames[index++] = tmp[i][j];
+        for (int i = 0; i < 2; i++) {
+            if(i==0){
+                for (int j = 0; j < 3; j++) {
+                    walkFrames[index++] = tmp[i][j];
+                }
+            }
+            else if(i==1){
+                for (int j = 0; j < 1; j++) {
+                    walkFrames[index++] = tmp[i][j];
+                }
+            }
+
+        }
+
+        walkingDown = new com.badlogic.gdx.graphics.g2d.Animation<TextureRegion>(0.16f, walkFrames);
+
+
+        //Animaatio ylöspäin käveltäessä
+        imgTaakse = new Texture("Kavely_taakse.png");
+
+        TextureRegion[][] tmp2 = TextureRegion.split(imgTaakse,
+                imgTaakse.getWidth() / 4,
+                imgTaakse.getHeight() / 3);
+
+
+        TextureRegion[] walkFrames2 = new TextureRegion[8];
+        int index2 = 0;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 4; j++) {
+                walkFrames2[index2++] = tmp2[i][j];
             }
         }
 
-        walkingDown = new com.badlogic.gdx.graphics.g2d.Animation<TextureRegion>(animationSpeed, walkFrames);
+        walkingUp = new com.badlogic.gdx.graphics.g2d.Animation<TextureRegion>(0.08f, walkFrames2);
+
+
+        //Animaatio oikealle käveltäessä
+        imgOikealle = new Texture("Kavely_oikea.png");
+
+        TextureRegion[][] tmp3 = TextureRegion.split(imgOikealle,
+                imgOikealle.getWidth() / 3,
+                imgOikealle.getHeight() / 3);
+
+
+        TextureRegion[] walkFrames3 = new TextureRegion[4];
+        int index3 = 0;
+        for (int i = 0; i < 2; i++) {
+            if(i==0){
+                for (int j = 0; j < 3; j++) {
+                    walkFrames3[index3++] = tmp3[i][j];
+                }
+            }
+            else if(i==1){
+                for (int j = 0; j < 1; j++) {
+                    walkFrames3[index3++] = tmp3[i][j];
+                }
+            }
+
+        }
+
+        walkingRight = new com.badlogic.gdx.graphics.g2d.Animation<TextureRegion>(0.15f, walkFrames3);
+
+
+        //Animaatio vasemmalle käveltäessä
+        imgVasemmalle = new Texture("Kavely_vasen.png");
+
+        TextureRegion[][] tmp4 = TextureRegion.split(imgVasemmalle,
+                imgVasemmalle.getWidth() / 3,
+                imgVasemmalle.getHeight() / 3);
+
+
+        TextureRegion[] walkFrames4 = new TextureRegion[4];
+        int index4 = 0;
+        for (int i = 0; i < 2; i++) {
+            if(i==0){
+                for (int j = 0; j < 3; j++) {
+                    walkFrames4[index4++] = tmp4[i][j];
+                }
+            }
+            else if(i==1){
+                for (int j = 0; j < 1; j++) {
+                    walkFrames4[index4++] = tmp4[i][j];
+                }
+            }
+
+        }
+
+        walkingLeft = new com.badlogic.gdx.graphics.g2d.Animation<TextureRegion>(0.15f, walkFrames4);
+
 
 
         playerCollision(x,y);
         setBounds(0,0,16, 16);
 
-        playerStanding = new TextureRegion(img,0,0,img.getWidth()/3,img.getHeight());
-
-        //testi 1 framella
-        playerStandingUp = new TextureRegion(imgTest,30,0,imgTest.getWidth()/2,imgTest.getHeight()/2);
-        playerStandingDown = new TextureRegion(imgTest,30,30,imgTest.getWidth()/2,imgTest.getHeight()/2);
-        playerStandingRight = new TextureRegion(imgTest,0,0,imgTest.getWidth()/2,imgTest.getHeight()/2);
-        playerStandingLeft = new TextureRegion(imgTest,0,30,imgTest.getWidth()/2,imgTest.getHeight()/2);
+        //1 framen kuvat
+        playerStanding = new TextureRegion(imgEteen,0,2400,imgEteen.getWidth()/3,imgEteen.getHeight()/3);
+        playerStandingUp = new TextureRegion(imgTaakse,0,600,imgTaakse.getWidth()/4,imgTaakse.getHeight()/3);
+        playerStandingRight = new TextureRegion(imgOikealle,0,1000,imgOikealle.getWidth()/3,imgOikealle.getHeight()/3);
+        playerStandingLeft = new TextureRegion(imgVasemmalle,0,1000,imgVasemmalle.getWidth()/3,imgVasemmalle.getHeight()/3);
 
 
         setRegion(playerStanding);
 
 
-        position = new Vector2(x-img.getWidth()/2,y-img.getHeight()/2);
+        position = new Vector2(x-imgEteen.getWidth()/2,y-imgEteen.getHeight()/2);
 
     }
 
@@ -109,39 +194,45 @@ public class Player extends Sprite {
     private TextureRegion getFrame(float dt){
         currentState = getState();
 
+
         TextureRegion region = playerStanding;
         switch (currentState){
             case WALKINGDOWN:
                 region = walkingDown.getKeyFrame(stateTimer, true);
                 SoundManager.walkSound.play();
+                i=1;
                 break;
             case WALKINGUP:
-                region = playerStandingUp;
+                region = walkingUp.getKeyFrame(stateTimer, true);
                 SoundManager.walkSound.play();
+                i=2;
                 break;
             case WALKINGRIGHT:
-                region = playerStandingRight;
+                region = walkingRight.getKeyFrame(stateTimer, true);
                 SoundManager.walkSound.play();
+                i=3;
                 break;
             case WALKINGLEFT:
-                region = playerStandingLeft;
+                region = walkingLeft.getKeyFrame(stateTimer, true);
                 SoundManager.walkSound.play();
+                i=4;
                 break;
-            /*case STANDING:
-                switch (previousState){
-                    case WALKINGDOWN:
-                        region = walkingDownStop.getKeyFrame(stateTimer, false);
-                        break;
-                    case WALKINGUP:
-                        region = walkingUpStop.getKeyFrame(stateTimer, false);
-                        break;
-                    case WALKINGRIGHT:
-                        region = walkingRightStop.getKeyFrame(stateTimer, false);
-                        break;
-                    case WALKINGLEFT:
-                        region = walkingLeftStop.getKeyFrame(stateTimer, false);
-                        break;
-                }*/
+            case STANDING:
+                if(i==1){
+                    region = playerStanding;
+                }
+                else if(i==2){
+                    region = playerStandingUp;
+                }
+                else if(i==3){
+                    region = playerStandingRight;
+                }
+                else if(i==4){
+                    region = playerStandingLeft;
+                }
+                break;
+
+
             default:
                 region = playerStanding;
                 break;
@@ -197,7 +288,7 @@ public class Player extends Sprite {
     }
 
     public void dispose(){
-        img.dispose();
+        imgEteen.dispose();
     }
 
 

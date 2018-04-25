@@ -48,8 +48,6 @@ public class MenuState extends State{
         SoundManager.music.setVolume(1f);
         SoundManager.music.play();
 
-
-
     }
 
     @Override

@@ -3,9 +3,6 @@ package com.seikkailupeli;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,10 +43,16 @@ public class Dialog {
 
     private void loadDialogs() {
         FileHandle handle = Gdx.files.internal("dialog_texts.txt");
-        String dialogText = handle.readString();
-        String textArray[] = dialogText.split("\\r?\\n");
-        Collections.addAll(dialogs, textArray);
-        dialogsLoaded = true;
+
+        if (handle.exists()) {
+            String dialogText = handle.readString();
+            String textArray[] = dialogText.split("\\n");
+            Collections.addAll(dialogs, textArray);
+            dialogsLoaded = true;
+        } else {
+            System.out.println("DIALOGS FILE NOT FOUND!");
+        }
+
     }
 
     String getCurrentDialog() {

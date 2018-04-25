@@ -6,17 +6,21 @@ class Inventory {
 
     private String itemName;
     private Texture itemTexture;
-    private float drawnPosX, drawnPosY;
-    private boolean positionSaved = false;
 
+    private float drawnPosX, drawnPosY;
+
+    private boolean positionSaved = false;
     private static boolean isFull = false;
+
     private static int row = 0;
 
-    private static int itemsPerRow = 7;
+    private static int itemsPerRow = 6;
     private static int maxRows = 3;
 
-    private static int distanceBetweenObjectsX = 150;
+    private static int distanceBetweenObjectsX = 175;
     private static int distanceBetweenObjectsY = 150;
+    private static int inventoryOffsetX = 550;
+    private static int inventoryOffsetY = 200;
 
     private static int itemRowNumber = 0;
 
@@ -56,6 +60,9 @@ class Inventory {
     static int getDistanceBetweenObjectsY() {
         return distanceBetweenObjectsY;
     }
+
+    static int getInventoryOffsetX() { return inventoryOffsetX; }
+    static int getInventoryOffsetY() { return inventoryOffsetY; }
 
     static int getItemsPerRow() {
         return itemsPerRow;
